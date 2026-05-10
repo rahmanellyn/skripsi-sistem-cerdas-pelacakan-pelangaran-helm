@@ -35,7 +35,7 @@ Data yang digunakan dalam penelitian ini dikategorikan menjadi dua jenis utama b
     Rekaman ini merepresentasikan arus lalu lintas utama kendaraan bermotor yang masuk dan keluar area kampus, sehingga relevan untuk analisis pelanggaran penggunaan helm di lingkungan kampus.
 
   \item Data Sekunder:
-    Untuk mendukung pelatihan dan evaluasi model deteksi objek berbasis YOLOv8, penelitian ini menggunakan data sekunder berupa ITERA Helmet Dataset. Dataset ini dibangun dari data primer melalui ekstraksi \textit{frame} secara selektif. Pengambilan \textit{frame} dilakukan berdasarkan kondisi visual yang memadai untuk deteksi objek, sehingga diperoleh sekitar 400 \textit{frame} yang representatif. Dataset kemudian dianotasi secara manual dengan tiga kelas target: \texttt{DRIVER\_HELMET}, \texttt{DRIVER\_NO\_HELMET}, dan \texttt{MOTORCYCLE}.
+    Untuk mendukung pelatihan dan evaluasi model deteksi objek berbasis YOLOv8, penelitian ini menggunakan data sekunder berupa \textit{ITERA Helmet Dataset}. Dataset ini dibangun dari data primer melalui ekstraksi \textit{frame} secara selektif. Pengambilan \textit{frame} dilakukan berdasarkan kondisi visual yang memadai untuk deteksi objek, sehingga diperoleh 390 \textit{frame} yang representatif. Dataset kemudian dianotasi secara manual dengan tiga kelas target: \texttt{DRIVER\_HELMET}, \texttt{DRIVER\_NO\_HELMET}, dan \texttt{MOTORCYCLE}.
 \end{enumerate}
 
 \subsection{Anotasi Data}
@@ -79,10 +79,10 @@ Sistem dibangun dengan \textit{Kappa Architecture} \cite{kreps2014questioning}, 
   \label{fig:architecture}
 \end{figure}
 \section{Perancangan Model YOLOv8 dan ByteTrack}
-Section ini menjelaskan perancangan model deteksi dan pelacakan, mulai dari proses pelatihan YOLOv8 hingga integrasi ByteTrack pada tahap inferensi.
+Bagian ini menjelaskan perancangan model deteksi dan pelacakan, mulai dari proses pelatihan YOLOv8 hingga integrasi ByteTrack pada tahap inferensi.
 
 \subsection{Pelatihan Model YOLOv8}
-Model YOLOv8s yang telah dilatih pada dataset COCO disesuaikan ulang melalui proses \textit{fine-tuning} menggunakan dataset kustom ITERA pada \textit{framework} Ultralytics. Proses ini menghasilkan berkas model \textit{best.pt} dengan bobot optimal untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
+Model YOLOv8s yang telah dilatih pada dataset COCO disesuaikan ulang melalui proses \textit{fine-tuning} menggunakan dataset kustom Itera pada \textit{framework} Ultralytics. Proses ini menghasilkan berkas model \textit{best.pt} dengan bobot optimal untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
 
 \section{Logika Deteksi Pelanggaran Helm}
 
@@ -92,7 +92,7 @@ Rangkaian proses integrasi sistem adalah sebagai berikut:
 \begin{enumerate}[a.]
   \item {Inferensi Deteksi Objek (YOLOv8)}: setiap \textit{frame} video diproses menggunakan model YOLOv8 untuk menghasilkan \textit{bounding box}, label kelas (\texttt{DRIVER\_HELMET}, \texttt{DRIVER\_NO\_HELMET}, dan \texttt{MOTORCYCLE}), serta skor kepercayaan. Deteksi dikonfigurasi dengan parameter \textit{confidence threshold} 0{,}25 dan \textit{NMS IoU threshold} 0{,}7.
 
-  \item {Pelacakan Multi-Objek (ByteTrack)}: hasil deteksi dikirim ke algoritma ByteTrack yang memberikan \texttt{track\_id} persisten pada setiap objek lintas frame. ByteTrack dikonfigurasi dengan \textit{track activation threshold} 0{,}4 (membagi deteksi ke tier tinggi dan rendah), \textit{lost track buffer} 60 frame ($\approx$2{,}4 detik pada 25 FPS), dan \textit{matching threshold} 0{,}85.
+  \item {Pelacakan Multi-Objek (ByteTrack)}: hasil deteksi dikirim ke algoritma ByteTrack yang memberikan \texttt{track\_id} persisten pada setiap objek lintas frame. ByteTrack dikonfigurasi dengan \textit{track activation threshold} 0{,}4 (membagi deteksi ke tier tinggi dan rendah), \textit{lost track buffer} 60 \textit{frame} (setara $\approx$2{,}4 detik pada FPS sumber 25 FPS atau $\approx$3{,}17 detik pada FPS efektif \textit{pipeline} 18{,}9 FPS), dan \textit{matching threshold} 0{,}85.
 
   \item {Asosiasi Spasial Rider--Motorcycle (IoA Filter)}: setelah pelacakan, dilakukan validasi spasial antara deteksi \texttt{DRIVER\_NO\_HELMET} dengan objek \texttt{MOTORCYCLE} menggunakan metrik \textit{Intersection over Area} (IoA). IoA mengukur proporsi area \textit{bounding box} pengendara yang beririsan dengan area motor:
     \begin{equation}

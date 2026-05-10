@@ -144,7 +144,7 @@ Tahap krusial setelah model ekstraksi fitur spasial divalidasi adalah integrasi 
 
 \subsection{Arsitektur dan Orkestrasi Pipeline Integrasi}
 \label{subsec:pipeline-architecture}
-Implementasi arsitektur \textit{streaming} memerlukan alur transformasi data yang terstruktur agar informasi mentah dapat dikonversi menjadi wawasan tanpa memicu beban komputasi berlebih. Subbagian ini membedah rancangan orkestrasi \textit{pipeline} pada simpul tepi yang membagi proses analitik ke dalam tahapan sekuensial. Pemaparan difokuskan pada perubahan data, mulai dari akuisisi matriks piksel, ekstraksi fitur lokalisasi, penetapan identitas objek, penyaringan berbasis aturan (\textit{rule-based filtering}), hingga serialisasi akhir menjadi aliran peristiwa (\textit{event stream}) berformat JSON yang siap ditransmisikan ke pialang pesan (\textit{message broker}).
+Implementasi arsitektur \textit{streaming} memerlukan alur transformasi data yang terstruktur agar informasi mentah dapat dikonversi menjadi wawasan tanpa memicu beban komputasi berlebih. Subbab ini membedah rancangan orkestrasi \textit{pipeline} pada simpul tepi yang membagi proses analitik ke dalam tahapan sekuensial. Pemaparan difokuskan pada perubahan data, mulai dari akuisisi matriks piksel, ekstraksi fitur lokalisasi, penetapan identitas objek, penyaringan berbasis aturan (\textit{rule-based filtering}), hingga serialisasi akhir menjadi aliran peristiwa (\textit{event stream}) berformat JSON yang siap ditransmisikan ke pialang pesan (\textit{message broker}).
 % ------------------------------------------------------------------
 \subsubsection{Diagram Alur Transformasi Data}
 \label{subsubsec:pipeline-flowchart}
@@ -624,7 +624,7 @@ Observasi terhadap kelengkapan data pada Tabel~\ref{tab:datamart-sample} menegas
 \midrule
 2026-02-05 08:15:22 & Kamera Gerbang Utama 1 & Tanpa Helm & 85,2\% & 45,2 ms \\
 2026-02-05 14:50:33 & Kamera Gerbang Utama 1 & Tanpa Helm & 65,4\% & 92,5 ms \\
-2026-02-05 17:10:45 & Kamera Gerbang Utama 1 & Tanpa Helm & 82,3\% & 41,0 ms \\
+2026-02-05 16:50:45 & Kamera Gerbang Utama 1 & Tanpa Helm & 82,3\% & 41,0 ms \\
 \bottomrule
 \end{tabularx}
 \renewcommand{\arraystretch}{1.0}
@@ -646,7 +646,7 @@ Hasil implementasi menunjukkan bahwa lapisan presentasi (\textit{presentation la
 Berdasarkan hasil konfigurasi antarmuka, kebutuhan pengawasan diakomodasi melalui empat kategori panel analitik utama. Pembagian ini menegaskan bahwa dasbor tidak hanya menampilkan data, tetapi juga memisahkan fungsi pemantauan cepat, pelacakan tren waktu, evaluasi performa sistem AI, dan pemetaan distribusi spasio-temporal dalam satu alur kerja yang jelas. Rincian fungsi tiap kategori panel disajikan pada Tabel~\ref{tab:dashboard-panels}.
 
 
-Hasil pengujian antarmuka menunjukkan bahwa pembaruan data dari skema bintang tersinkronisasi secara konsisten dengan proses \textit{rendering} visual pada setiap panel. Hasil ini menandakan bahwa arsitektur \textit{Business Intelligence} telah memenuhi kebutuhan operasional sebagai media pemantauan data riil di lingkungan kampus. Dengan demikian, dasbor pada tahap ini berperan sebagai lapisan observasi, sedangkan pembacaan pola temporal dan spasial secara analitis disajikan pada Subbagian~\ref{subsec:analisis-data-lapangan}.
+Hasil pengujian antarmuka menunjukkan bahwa pembaruan data dari skema bintang tersinkronisasi secara konsisten dengan proses \textit{rendering} visual pada setiap panel. Hasil ini menandakan bahwa arsitektur \textit{Business Intelligence} telah memenuhi kebutuhan operasional sebagai media pemantauan data riil di lingkungan kampus. Dengan demikian, dasbor pada tahap ini berperan sebagai lapisan observasi, sedangkan pembacaan pola temporal dan spasial secara analitis disajikan pada Subbab~\ref{subsec:analisis-data-lapangan}.
 
 % --- EVIDENCE 2: Tabel Konfigurasi Panel ---
 \begin{table}[htbp]

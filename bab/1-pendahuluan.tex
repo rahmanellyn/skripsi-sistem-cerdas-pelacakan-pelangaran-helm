@@ -4,7 +4,7 @@
 \section{Latar Belakang}
 \label{section:latarbelakang}
 
-% === Paragraf 1: Visi ITERA dan Daya Tarik Forest Campus ===
+% === Paragraf 1: Visi Itera dan Daya Tarik Forest Campus ===
 Institut Teknologi Sumatera (Itera) memiliki visi untuk menjadi perguruan
 tinggi teknologi yang unggul dengan lingkungan kampus yang nyaman, aman, dan
 berwawasan lingkungan \cite{itera2019renstra}. Salah satu implementasinya
@@ -55,13 +55,13 @@ Penelitian ini mengusulkan sistem visi komputer untuk mendeteksi dan
 menganalisis pelanggaran penggunaan helm di lingkungan kampus Itera. Rancangan
 sistem mengintegrasikan YOLOv8 sebagai model deteksi objek. ByteTrack digunakan
 sebagai algoritma pelacakan multiobjek untuk menjaga konsistensi identitas
-pengendara antarframe. Kombinasi ini efektif untuk analisis lalu lintas berbasis
+pengendara antar-\textit{frame}. Kombinasi ini efektif untuk analisis lalu lintas berbasis
 video pada skenario dinamis dengan banyak objek bergerak \cite{liu2025vehicle}.
 Berbeda dengan pendekatan yang berhenti pada identifikasi visual, penelitian
 ini mentransformasikan keluaran inferensi menjadi aliran peristiwa
 (\textit{event stream}). Aliran ini memuat konteks spasial dan temporal, seperti
 waktu kejadian, titik kamera, identitas objek, dan status pelanggaran. Setiap
-peristiwa dicatat sebagai metadata terstruktur dan disimpan dalam data mart.
+peristiwa dicatat sebagai metadata terstruktur dan disimpan dalam \textit{data mart}.
 Penyimpanan ini mendukung analisis historis, nonvolatil, dan berorientasi
 analitik. Dengan pendekatan ini, sistem berfungsi sebagai alat deteksi otomatis.
 Sistem juga menjadi fondasi analitik jangka panjang untuk mengidentifikasi
@@ -78,9 +78,9 @@ ini adalah sebagai berikut:
 \begin{enumerate}
   \item Bagaimana merancang dan melatih YOLOv8 untuk mendeteksi pengendara sepeda motor berhelm dan tanpa helm pada video CCTV kampus secara andal?
 
-  \item Bagaimana mengintegrasikan YOLOv8 dan ByteTrack pada pemrosesan video real-time agar inferensi menjadi \textit{event stream} dengan konteks spasial dan temporal?
+  \item Bagaimana mengintegrasikan YOLOv8 dan ByteTrack pada pemrosesan video \textit{real-time} agar inferensi menjadi \textit{event stream} dengan konteks spasial dan temporal?
 
-  \item Bagaimana merancang skema data mart untuk menyimpan peristiwa pelanggaran helm secara sistematis agar mendukung analisis pola lalu lintas dan tren keselamatan di Itera?
+  \item Bagaimana merancang skema \textit{data mart} untuk menyimpan peristiwa pelanggaran helm secara sistematis agar mendukung analisis pola lalu lintas dan tren keselamatan di Itera?
 \end{enumerate}
 
 \section{Tujuan Penelitian}
@@ -91,9 +91,9 @@ Tujuan penelitian ini adalah sebagai berikut:
 \begin{enumerate}
   \item Mengembangkan dan melatih YOLOv8 untuk mendeteksi pengendara sepeda motor berhelm dan tanpa helm pada lingkungan kampus.
 
-  \item Mengimplementasikan integrasi YOLOv8 dan ByteTrack pada pemrosesan video real-time untuk menghasilkan \textit{event stream} pelanggaran helm dengan konteks spasial dan temporal.
+  \item Mengimplementasikan integrasi YOLOv8 dan ByteTrack pada pemrosesan video \textit{real-time} untuk menghasilkan \textit{event stream} pelanggaran helm dengan konteks spasial dan temporal.
 
-  \item Merancang dan mengimplementasikan data mart analitik sebagai bagian dari arsitektur data warehouse untuk menyimpan hasil deteksi pelanggaran helm secara historis. Hasilnya mendukung analisis pola lalu lintas dan keputusan keselamatan berbasis data di Itera.
+  \item Merancang dan mengimplementasikan \textit{data mart} analitik sebagai bagian dari arsitektur \textit{data warehouse} untuk menyimpan hasil deteksi pelanggaran helm secara historis. Hasilnya mendukung analisis pola lalu lintas dan keputusan keselamatan berbasis data di Itera.
 
 \end{enumerate}
 
@@ -110,7 +110,7 @@ waktu yang ditetapkan, ruang lingkup penelitian dibatasi sebagai berikut:
 
   \item YOLOv8 digunakan sebagai komponen untuk mengekstraksi informasi visual dari data video. Penelitian tidak membahas modifikasi arsitektur internal YOLOv8, perbandingan dengan detektor lain, maupun optimasi pada tingkat algoritmik.
 
-  \item Pengumpulan dan pengujian data dilakukan dalam rentang waktu tertentu, yaitu pada periode 5 Februari.
+  \item Pengumpulan dan pengujian data dilakukan dalam rentang waktu tertentu, yaitu pada 5 Februari 2026 dengan jendela observasi pukul 07.00--17.00 WIB.
 
   \item Penelitian tidak melakukan perbandingan eksperimental antara arsitektur streaming dan non-streaming. Fokus berada pada perancangan dan evaluasi sistem analitik end-to-end berbasis peristiwa.
 

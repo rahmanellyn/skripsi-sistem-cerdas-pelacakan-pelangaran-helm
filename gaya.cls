@@ -8,7 +8,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{gaya}
 \LoadClass[11pt]{report} % Set base font size to 11pt
-\RequirePackage[english,indonesian]{babel}
+\RequirePackage[english,bahasa]{babel}
 \RequirePackage{indentfirst}
 \RequirePackage{setspace}
 \RequirePackage[T1]{fontenc}
