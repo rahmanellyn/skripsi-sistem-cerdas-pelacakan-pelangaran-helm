@@ -59,16 +59,56 @@ Di luar ROI, warna peta panas didominasi biru muda hingga abu-abu yang berarti \
 
 Pra-pemrosesan dan augmentasi mengubah 390 citra mentah menjadi 856 sampel pelatihan terstandarisasi. Setiap citra dikalibrasi dengan \textit{auto-orient}, lalu diubah ukurannya (\textit{resize}) ke resolusi seragam $640 \times 640$ piksel. Tahap augmentasi kemudian menghasilkan tiga variasi sintetis untuk setiap citra asli, dengan rincian hiperparameter pada Tabel~\ref{tab:augmentasi}.
 
-Strategi augmentasi disusun untuk mereplikasi gangguan visual yang lazim terjadi pada kamera pengawas luar ruang. Visualisasi setiap teknik augmentasi disajikan pada Gambar~\ref{fig:augmentasi-visual}.
+Pemilihan resolusi $640 \times 640$ piksel pada YOLOv8n didasari tiga pertimbangan teknis. Pertama, \textit{backbone} YOLOv8 memakai \textit{stride} maksimum 32 sehingga ukuran masukan harus kelipatan 32 agar peta fitur pada level deteksi P3, P4, dan P5 berdimensi bilangan bulat tanpa \textit{padding} tambahan; nilai 640 memenuhi syarat tersebut karena $640 \div 32 = 20$. Kedua, $640 \times 640$ adalah resolusi standar saat YOLOv8 dilatih pada dataset COCO, sehingga bobot pra-latih dapat dipakai langsung dan kalibrasi \textit{head} deteksi tidak perlu disesuaikan ulang. Ketiga, varian ringan YOLOv8 --- termasuk YOLOv8n yang dipakai pada penelitian ini --- dirancang untuk inferensi waktu nyata pada perangkat tepi; resolusi $640 \times 640$ menjaga keseimbangan antara akurasi deteksi objek kecil seperti helm dan beban komputasi yang masih realistis untuk pemrosesan \textit{streaming} CCTV. Resolusi yang lebih besar seperti $1280 \times 1280$ memang menaikkan akurasi tetapi memperberat inferensi, sedangkan resolusi yang lebih kecil seperti $320 \times 320$ membuat detail kepala pengendara hilang karena hanya tertangkap beberapa piksel.
+
+Strategi augmentasi disusun untuk mereplikasi gangguan visual yang lazim terjadi pada kamera pengawas luar ruang. Setiap teknik divisualisasikan dengan citra sebelum dan sesudah augmentasi pada Gambar~\ref{fig:aug-rotasi} sampai Gambar~\ref{fig:aug-noise}, sedangkan parameter \textit{motion blur} dirinci pada Tabel~\ref{tab:augmentasi}.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{gambar/data_argumentation.png}
-\caption{Implementasi strategi augmentasi data pada citra CCTV lalu lintas: (a) \textit{rotation}, (b) \textit{shear}, (c) \textit{exposure adjustment}, (d) \textit{Gaussian blur}, (e) \textit{additive noise}, dan (f) \textit{motion blur}.}
-\label{fig:augmentasi-visual}
+  \centering
+  \includegraphics[width=0.85\textwidth]{gambar/aug_rotasi.png}
+  \caption{Augmentasi rotasi pada rentang $-8^\circ$ sampai $+8^\circ$.}
+  \label{fig:aug-rotasi}
 \end{figure}
 
-Pada Gambar~\ref{fig:augmentasi-visual}, setiap transformasi geometris dan fotometrik membidik kondisi gangguan tertentu di lapangan. Rotasi ($-8^\circ$ hingga $+8^\circ$) dan \textit{shear} ($\pm 10^\circ$) pada Gambar~\ref{fig:augmentasi-visual}(a) dan (b) mensimulasikan pergeseran sudut pandang akibat getaran tiang atau hembusan angin. Variasi ini melatih model mengenali fitur spasial kendaraan tanpa bergantung pada orientasi horizon sempurna. Penyesuaian \textit{exposure} ($\pm 10\%$) dan \textit{additive noise} (hingga 1,09\%) pada Gambar~\ref{fig:augmentasi-visual}(c) dan (e) mereplikasi fluktuasi iluminasi harian serta kondisi cuaca. Augmentasi fotometrik semacam ini menekan risiko \textit{overfitting} terhadap intensitas warna tertentu dan mendorong representasi semantik yang lebih kuat \cite{shorten2019survey}. Pada aspek dinamika objek, Gambar~\ref{fig:augmentasi-visual}(d) dan (f) memperagakan \textit{Gaussian blur} (hingga 1,4 piksel) dan \textit{motion blur}. Distorsi fokus dan artefak gerak melatih model menjaga akurasi deteksi lintas \textit{frame} ketika kualitas fitur target menurun sementara.
+Augmentasi rotasi memutar citra dalam rentang $-8^\circ$ sampai $+8^\circ$ untuk meniru pergeseran sudut tiang kamera akibat getaran atau dorongan angin. Kamera CCTV pada tiang sering kali sedikit miring dari posisi awal sehingga horizon citra ikut berubah. Pelatihan menggunakan citra hasil rotasi membuat model tidak bergantung pada orientasi horizon yang sempurna ketika mengenali pengendara dan motor.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{gambar/aug_shear.png}
+  \caption{Augmentasi \textit{shear} pada sumbu X dan Y dengan nilai $\pm 0{,}2$.}
+  \label{fig:aug-shear}
+\end{figure}
+
+Augmentasi \textit{shear} memiringkan citra pada sumbu X dan Y sebesar $\pm 0{,}2$ untuk meniru distorsi perspektif ketika kamera tidak tegak lurus dengan bidang jalan. Empat varian (X positif, X negatif, Y positif, Y negatif) memperluas variasi sudut pandang sehingga model lebih tahan saat sudut pandang kamera di lapangan berbeda dari sudut pelatihan.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{gambar/aug_exposure.png}
+  \caption{Augmentasi \textit{exposure} pada rentang $-10\%$ sampai $+10\%$.}
+  \label{fig:aug-exposure}
+\end{figure}
+
+Variasi \textit{exposure} sebesar $\pm 10\%$ menyimulasikan perubahan iluminasi sepanjang hari, dari pagi yang masih gelap sampai siang yang sangat terang. Citra dengan eksposur $-10\%$ terlihat lebih gelap dengan bayangan yang dominan, sedangkan eksposur $+10\%$ membuat citra lebih cerah dan kontras tampak menurun. Variasi ini menekan ketergantungan model pada nilai kecerahan tertentu sehingga deteksi tetap stabil di berbagai kondisi pencahayaan.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{gambar/aug_blur.png}
+  \caption{Augmentasi \textit{Gaussian blur} dengan \textit{kernel} 1 piksel.}
+  \label{fig:aug-blur}
+\end{figure}
+
+\textit{Gaussian blur} dengan \textit{kernel} 1 piksel meniru kondisi kamera CCTV yang sedikit kehilangan fokus, misalnya karena embun pada lensa atau udara berkabut. Citra hasil augmentasi terlihat sedikit kabur tetapi bentuk objek tetap dapat dibedakan. Augmentasi ini melatih model untuk tidak terlalu bergantung pada ketajaman tepi objek saat melakukan deteksi.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{gambar/aug_noise.png}
+  \caption{Augmentasi \textit{additive noise} sebesar 1\% dari total piksel.}
+  \label{fig:aug-noise}
+\end{figure}
+
+Penambahan \textit{additive noise} sebesar 1\% mereplikasi \textit{grain} sensor kamera pada kondisi cahaya rendah, kompresi \textit{streaming} yang agresif, atau interferensi sinyal pada CCTV analog. Bintik halus yang muncul mengaburkan detail tepi objek tanpa mengubah bentuk keseluruhan, sehingga model tetap dapat mengenali pengendara meskipun citra penuh artefak.
+
+Kelima teknik di atas dilengkapi dengan \textit{motion blur} berpanjang 10 piksel yang meniru jejak gerak ketika kendaraan melintas cepat atau \textit{frame rate} CCTV menurun. Secara keseluruhan, kombinasi enam teknik tersebut menekan risiko \textit{overfitting} terhadap kondisi visual tertentu dan mendorong model membentuk representasi semantik yang lebih kuat \cite{shorten2019survey}.
 
 % ------------------------------------------------------------
 \subsection{Konfigurasi Pemisahan Dataset dan Dinamika Pelatihan}
