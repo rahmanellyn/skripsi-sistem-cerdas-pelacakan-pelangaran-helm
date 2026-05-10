@@ -1,0 +1,611 @@
+% !TEX root = ../main.tex
+
+\chapter{TINJAUAN PUSTAKA}
+
+\section{Penelitian Terdahulu}
+Dibandingkan dengan lima penelitian pada Tabel~\ref{tab:penelitian_terdahulu},
+studi ini berfokus pada pengembangan sistem end-to-end. Sistem yang diusulkan
+mengintegrasikan deteksi, pelacakan, dan evaluasi kinerja simpang secara
+real-time dengan model YOLOv8 dan arsitektur \textit{big data streaming}.
+Pendekatan ini melampaui studi terdahulu yang umumnya berhenti pada deteksi
+atau pelacakan. Luarannya adalah analisis lalu lintas yang lebih adaptif dan
+terukur melalui alur otomatis.
+
+\vspace{0.5\baselineskip}
+
+{\footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{longtable}{@{}>{\RaggedRight\arraybackslash}p{0.23\textwidth} >{\RaggedRight\arraybackslash}p{0.25\textwidth} >{\RaggedRight\arraybackslash}p{0.14\textwidth} >{\RaggedRight\arraybackslash}p{0.30\textwidth}@{}}
+    \caption{Ringkasan Penelitian Terdahulu}
+    \label{tab:penelitian_terdahulu} \\
+    \toprule
+    \textbf{Peneliti \& Judul} & \textbf{Metodologi} & \textbf{Data} & \textbf{Hasil Utama} \\
+    \midrule
+    \endfirsthead
+
+    \caption[]{Ringkasan Penelitian Terdahulu} \\
+    \toprule
+    \textbf{Peneliti \& Judul} & \textbf{Metodologi} & \textbf{Data} & \textbf{Hasil Utama} \\
+    \midrule
+    \endhead
+
+    \midrule
+    \endfoot
+
+    \bottomrule
+    \endlastfoot
+
+    \textbf{Figo Agil Alunjati \cite{alunjati2025intersection}} \newline
+    \textit{Architecture of Four-Arm Intersection Performance Evaluation System Based on Turn Movement Count and Omnidirectional Camera.}(2025) &
+    Sistem evaluasi simpang \textit{real-time} berbasis kamera omnidirectional dan YOLO (v5, v8, v11) untuk \textit{turn movement count}. &
+    CCTV ATCS Sedayu (2 hari). &
+    YOLOv11 (batch 32): \textbf{mAP 93\%, F1 91\%, FPS 53}; \textit{occlusion} berkurang, tetapi sensitif terhadap cahaya ekstrem. \\
+
+    \textbf{Liu et al. \cite{liu2025vehicle}} \newline
+    \textit{Vehicle Flow Detection dengan YOLOv8n + ByteTrack.}(2025) &
+    Integrasi MSN-YOLOv8n (SEAM, NWD Loss) dan ByteTrack--ReID untuk deteksi serta pelacakan kendaraan kecil. &
+    UA-DETRAC. &
+    \textbf{mAP 62.8\%}, \textbf{MOTA 72.16\%}; stabil untuk objek kecil, tetapi baru diuji pada satu dataset dan belum \textit{streaming real-time}. \\
+
+    \textbf{Aboah et al. \cite{aboah2023helmet}} \newline
+    \textit{Real-Time Multi-Class Helmet Violation Detection Using Few-Shot Data Sampling Technique and YOLOv8.}(2023) &
+    YOLOv8 dengan \textit{few-shot data sampling} untuk deteksi pelanggaran helm multikelas. &
+    AI City 2023 Track 5. &
+    YOLOv8+TTA: mAP 0.5861, 95 FPS, peringkat 7/192; efisien untuk implementasi \textit{real-time} \textit{smart city}. \\
+
+    \textbf{Do et al. \cite{do2025ramots}} \newline
+    \textit{RAMOTS: Real-Time Aerial Multi-Object Tracking.}(2025) &
+    Pelacakan multiobjek UAV dengan YOLOv8/v10 + BYTETrack pada arsitektur Kafka--Spark. &
+    Video UAV. &
+    \textbf{HOTA 48.14}, \textbf{28 FPS}; efektif untuk udara, namun menurun di lingkungan darat dan masih bergantung satu GPU. \\
+
+\end{longtable}}
+
+\section{Landasan Teori}
+
+\subsection{Big Data}
+
+\textit{Big Data} merupakan kumpulan data berukuran besar, tumbuh cepat, dan
+beragam. Karakteristik ini membuat pendekatan pengolahan tradisional menjadi
+kurang efisien. Karakteristik utama \textit{Big Data} dikenal sebagai "5V"
+\cite{marz2015big}:
+
+\begin{enumerate}[a.]
+  \item \textit{Volume}: Data yang dihasilkan sangat besar, misalnya aliran video 24/7 dari empat kamera CCTV dan data pelanggaran yang terus bertambah pada \textit{data warehouse}. Kondisi ini membutuhkan infrastruktur penyimpanan dan pemrosesan yang skalabel.
+
+  \item \textit{Velocity}: Data perlu diproses secara \textit{real-time} dengan target latensi $\leq$ 2 detik, sehingga arsitektur sistem harus efisien dan stabil.
+
+  \item \textit{Variety}: Data tersedia dalam berbagai format:
+  \begin{enumerate}[1).]
+    \item Tidak terstruktur: video, gambar, dan media sosial.
+    \item Semi-terstruktur: log sistem dari Apache Kafka.
+    \item Terstruktur: data pelanggaran dalam skema relasional.
+  \end{enumerate}
+
+\item \textit{Veracity}: Keandalan dan akurasi data harus dijaga melalui proses validasi untuk menekan \textit{false positive} dan \textit{false negative}.
+
+\item \textit{Value}: Data perlu menghasilkan nilai guna, misalnya dalam bentuk dasbor analitik untuk mendukung pengambilan keputusan.
+\end{enumerate}
+
+Penelitian ini menghadapi tantangan utama pada aspek \textit{volume} dan
+\textit{velocity}. Kondisi tersebut mendorong penggunaan
+\textit{stream processing} dibandingkan \textit{batch processing}. Salah satu
+pendekatan yang relevan adalah \textit{Kappa Architecture}, yang memungkinkan
+pemrosesan historis dan \textit{real-time} melalui satu alur data
+\cite{marz2015big}.
+
+\subsection{Arsitektur Streaming: \textit{Kappa Architecture}}
+
+Arsitektur Kappa adalah pendekatan pemrosesan \textit{Big Data} yang berfokus
+pada aliran data \textit{real-time} \cite{kreps2014iheartlogs}. Pendekatan
+ini menyederhanakan Arsitektur Lambda dengan menghilangkan pemisahan antara
+\textit{batch layer} dan \textit{speed layer}.  Data bersifat temporal dan dapat dipandang sebagai
+aliran peristiwa (\textit{event stream}). Karena itu, paradigma
+\textit{stream-first} memproses data historis dan data baru melalui jalur yang
+sama. Pada arsitektur ini, repositori log seperti Apache~Kafka berperan
+sebagai \textit{single source of truth} dan tetap memungkinkan proses
+\textit{replay} saat diperlukan. Dengan satu alur pemrosesan, arsitektur
+Kappa menawarkan latensi rendah dan konsistensi implementasi
+\cite{kreps2014questioning}. Dampaknya, pengembangan, pengujian, dan
+pemeliharaan sistem analitik menjadi lebih efisien.
+
+Arsitektur Kappa terdiri atas tiga komponen utama:
+\begin{enumerate}[a.]
+\item \textit{Ingestion Layer}: menerima data dari berbagai sumber dan memasukkannya ke antrean data menggunakan \textit{message broker} seperti Apache~Kafka.
+\item \textit{Stream Processing Layer}: melakukan transformasi, agregasi, dan analisis data secara berkelanjutan menggunakan \textit{stream processing framework}.
+\item \textit{Serving Layer}: menyimpan hasil olahan pada sistem penyimpanan yang mendukung \textit{low-latency read} untuk kebutuhan pengguna maupun sistem lain.
+\end{enumerate}
+
+Dengan satu \textit{pipeline}, Arsitektur Kappa cocok untuk aplikasi berlatensi rendah seperti \textit{IoT analytics} dan pemantauan lalu lintas. Pendekatan ini mengurangi kebutuhan sinkronisasi antarlapisan, mempercepat waktu respons, dan menyederhanakan pemeliharaan sistem.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1\textwidth]{gambar/Kappa-architecture-data-flow.png}
+\caption{Alur Data Arsitektur Kappa \cite{kreps2014questioning}}
+\label{fig:lambda_vs_kappa}
+\end{figure}
+
+\subsubsection{Apache Kafka}
+Apache Kafka adalah platform \textit{streaming} terdistribusi yang dirancang
+untuk menangani aliran data berkecepatan tinggi dengan latensi rendah dan
+keandalan tinggi. Dalam arsitektur data \textit{real-time}, Kafka berperan
+sebagai \textit{message broker} yang menghubungkan produsen dan konsumen data
+secara asinkron, termasuk pada sistem berskala besar berbasis
+\textit{microservices} \cite{kreps2014questioning}. Penerapan Kafka pada
+pemrosesan video \textit{real-time} juga telah dilaporkan dalam penelitian
+\cite{ayae2017video}, yang menunjukkan bahwa Kafka mampu menjaga kontinuitas
+aliran data secara stabil.
+
+Kafka menyimpan data secara arsitektural sebagai rekaman berurutan di dalam
+\textit{topic} yang dibagi ke beberapa \textit{partition}. Mekanisme ini
+memungkinkan proses tulis-baca berlangsung paralel, sehingga \textit{throughput}
+sistem meningkat tanpa mengorbankan latensi. Setiap data memiliki
+\textit{offset} sebagai penanda posisi, sehingga status konsumsi data dapat
+dilacak dengan presisi dan diputar ulang (\textit{replay}) saat dibutuhkan.
+
+Kafka juga menyediakan reliabilitas melalui replikasi
+\textit{partition} antar-\textit{broker} untuk menjaga ketahanan layanan saat
+terjadi kegagalan simpul. Karakteristik \textit{durable log} dan pola
+\textit{publish-subscribe} ini menjadikan Kafka sesuai sebagai
+\textit{ingestion layer} pada Arsitektur Kappa, karena banyak konsumen dapat
+mengolah aliran data yang sama secara independen \cite{kreps2014questioning}.
+Dalam penelitian ini, Kafka berfungsi sebagai jalur distribusi hasil deteksi
+dari modul visi komputer menuju pemrosesan \textit{streaming} secara kontinu,
+sehingga analitik \textit{end-to-end} tetap responsif dan konsisten
+\cite{ayae2017video}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{gambar/kafka_arsitecture.png}
+\caption{Arsitektur komponen inti Apache Kafka \cite{ayae2017video}}
+\label{fig:kafka_architecture}
+\end{figure}
+
+\subsubsection{Apache Spark}
+Apache Spark adalah \textit{unified analytics engine} untuk pemrosesan data
+terdistribusi berskala besar pada mode \textit{batch} maupun \textit{stream}
+\cite{zaharia2016apachespark}. Untuk kebutuhan \textit{real-time}, Spark
+menyediakan {Spark Structured Streaming} yang memproses data dalam
+bentuk \textit{incremental micro-batch} dengan semantik deklaratif
+\cite{zaharia2018structured}. Pendekatan ini mendukung konsistensi hasil,
+toleransi kesalahan melalui \textit{checkpointing}, serta
+\textit{exactly-once processing semantics}. Selain itu, Spark Structured
+Streaming mendukung pemrosesan \textit{stateful} untuk mempertahankan
+informasi historis lintas aliran data. Mekanisme ini dapat diimplementasikan
+melalui fungsi \textit{mapGroupsWithState} untuk membentuk \textit{state}
+pada setiap grup data, serta \textit{flatMapGroupsWithState} untuk
+memperbarui \textit{state} secara berkelanjutan.
+% \subsubsection{Penghitungan Unik Berbasis Pelacakan}
+% Dalam konteks pelacakan objek, terutama pada sistem CCTV, satu objek dapat muncul di banyak frame tanpa menunjukkan terjadinya pelanggaran baru. Oleh karena itu, penghitungan pelanggaran harus dilakukan berdasarkan \textit{identitas objek (ID tracking)}, bukan berdasarkan jumlah deteksi \cite{zhang2022bytetrack_eccv}.
+
+% Dengan menggunakan \textit{stateful stream processing} pada Spark, sistem dapat menyimpan daftar \textit{ID} yang telah dihitung sehingga objek yang sama tidak dihitung lebih dari satu kali. Konsep ini dapat dimodelkan sebagai:
+
+% \begin{equation}
+% \mathbb{I}_{\text{count}}(ID) =
+% \begin{cases}
+% 1, & \text{jika } ID \notin \text{State}_{t-1} \\
+% 0, & \text{jika } ID \in \text{State}_{t-1}
+% \end{cases}
+% \end{equation}
+
+% Setelah ID dihitung sekali, state diperbarui:
+% \begin{equation}
+% \text{State}_{t} \leftarrow \text{State}_{t-1} \cup \{ID\}
+% \end{equation}
+
+% Dengan demikian, Spark Structured Streaming berperan sebagai modul pengelola state, memastikan bahwa penghitungan pelanggaran:
+% \begin{enumerate}
+%     \item Tidak mengalami \textit{double counting},
+%     \item Dapat menangani objek yang terhalang sementara (occlusion),
+%     \item Tetap konsisten meskipun data diterima secara kontinu dalam skala besar.
+% \end{enumerate}
+
+% \section{Object Detection}
+% Object Detection adalah teknik dalam Computer Vision yang digunakan untuk mengidentifikasi dan menemukan objek tertentu dalam sebuah gambar atau video.
+% Tujuan utama dari object detection adalah mengembangkan model dan teknik komputasi yang mampu mengidentifikasi jenis serta menentukan posisi objek dalam sebuah gambar.
+% Secara umum, object detection dapat diklasifikasikan ke dalam dua bidang penelitian utama, yaitu general object detection dan detection application\cite{10028728}.
+% General object detection berfokus pada pengembangan metode yang dapat mendeteksi berbagai objek dalam gambar secara menyeluruh, meniru cara kerja penglihatan manusia.
+% Sementara itu, detection application lebih spesifik dalam mendeteksi objek dalam konteks tertentu, seperti identifikasi pejalan kaki, rambu lalu lintas, wajah, dan berbagai skenario lainnya \cite{10028728}.
+\subsection{YOLO (\textit{You Only Look Once})}
+\textit{You Only Look Once} (YOLO) adalah arsitektur deteksi objek berbasis
+\textit{Convolutional Neural Network} (CNN) yang memprediksi
+\textit{bounding box} dan kelas objek secara langsung dalam satu tahap
+(\textit{single-stage detector}) \cite{redmon2016you}. Berbeda dengan metode
+dua tahap seperti R-CNN, YOLO memformulasikan deteksi sebagai masalah regresi
+tunggal dari piksel citra ke koordinat kotak dan probabilitas kelas
+\cite{redmon2016you}.
+
+YOLO membagi citra masukan menjadi grid berukuran $S \times S$. Jika pusat
+objek berada pada sebuah \textit{grid cell}, sel tersebut bertanggung jawab
+melakukan prediksi objek. Setiap sel memprediksi $B$ \textit{bounding box}
+dengan parameter $(x, y, w, h, \textit{confidence})$ serta probabilitas kelas.
+Bentuk keluaran model dinyatakan pada Persamaan~\ref{eq:tensor_output}:
+\begin{equation}
+\label{eq:tensor_output}
+\text{Tensor Output YOLO} \in \mathbb{R}^{S \times S \times (B \cdot 5 + C)}
+\end{equation}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{gambar/yolo_boundinbox.png}
+\caption{Ilustrasi mekanisme prediksi \textit{bounding box} pada YOLO \cite{redmon2016you}}
+\label{fig:yolo}
+\end{figure}
+
+Representasi ini menunjukkan bahwa \(x, y\) menyatakan koordinat pusat kotak
+yang diprediksi relatif terhadap sel grid tempat objek terdeteksi. Sementara
+itu, \(w, h\) menyatakan lebar dan tinggi kotak pembatas relatif terhadap
+ukuran citra masukan. Formulasi ini membantu model menjaga konsistensi
+lokalisasi ketika skala objek berubah. Formulasi ini juga mempermudah
+konversi ke koordinat absolut pada tahap pascapemrosesan.
+
+Skor \textit{confidence} didefinisikan sebagai kombinasi antara probabilitas
+keberadaan objek dan ketepatan lokalisasi kotak pembatas. Nilai ini menjadi
+indikator utama untuk menilai keyakinan prediksi pada setiap kandidat deteksi.
+Semakin tinggi skor \textit{confidence}, semakin besar kemungkinan objek
+benar-benar ada dan posisi kotaknya sesuai anotasi acuan. Pada tahap
+pascapemrosesan, skor ini dipakai untuk menyaring prediksi bernilai rendah
+sebelum proses \textit{non-maximum suppression} (NMS). Secara matematis,
+\textit{confidence} dinyatakan pada Persamaan~\ref{eq:IOU_revised}:
+\begin{equation}
+C = \Pr(\text{Object}) \times \text{IoU}(\text{pred}, \text{truth})
+\label{eq:IOU_revised}
+\end{equation}
+
+Fungsi kerugian YOLO menggunakan \textit{sum-squared error} untuk
+menyeimbangkan kesalahan prediksi koordinat, ukuran kotak,
+\textit{confidence}, dan klasifikasi \cite{redmon2016you}. Parameter
+$\lambda_{\text{coord}}$ dan $\lambda_{\text{noobj}}$ digunakan untuk
+mengatur bobot kesalahan koordinat dan penalti pada kotak tanpa objek. Bentuk
+fungsi kerugian ditunjukkan pada Persamaan~\ref{eq:yolo_loss}:
+
+\begin{equation}
+\label{eq:yolo_loss}
+\begin{split} \text{Loss} = & \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{I}_{ij}^{\text{obj}} \left[ (x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2 \right] \\ & + \lambda_{\text{coord}} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{I}_{ij}^{\text{obj}} \left[ (\sqrt{w_i} - \sqrt{\hat{w}_i})^2 + (\sqrt{h_i} - \sqrt{\hat{h}_i})^2 \right] \\ & + \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{I}_{ij}^{\text{obj}} (C_i - \hat{C}_i)^2 \\ & + \lambda_{\text{noobj}} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{I}_{ij}^{\text{noobj}} (C_i - \hat{C}_i)^2 \\ & + \sum_{i=0}^{S^2} \mathbb{I}_{i}^{\text{obj}} \sum_{c \in \text{classes}} (p_i(c) - \hat{p}_i(c))^2
+\end{split}
+\end{equation}
+
+Arsitektur YOLO awal terdiri atas 24 lapisan konvolusional dan 2 lapisan
+\textit{fully connected} \cite{redmon2016you}. Lapisan konvolusional
+menggunakan \textit{filter} berukuran $3 \times 3$ dan $1 \times 1$ dengan
+\textit{max pooling} untuk mereduksi dimensi spasial. Lapisan
+\textit{fully connected} menghasilkan prediksi akhir kotak pembatas dan kelas
+objek.
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.8\textwidth]{gambar/yolo_architure.png}
+% \caption{Arsitektur YOLO sebagai \textit{single-stage object detector}\cite{redmon2016you}.}
+% \label{fig:yolov1_architecture}
+% \end{figure}
+% \subsubsection{Paradigma Prediksi Berbasis Anchor-Free}
+
+% Pendekatan deteksi objek modern menunjukkan pergeseran konseptual dari metode \textit{anchor-based} menuju \textit{anchor-free prediction}.
+% Pada varian terdahulu seperti YOLOv3 hingga YOLOv5, sistem deteksi bergantung pada kumpulan \textit{anchor boxes} yang telah ditentukan sebelumnya untuk memperkirakan ukuran dan rasio aspek objek.
+% Meskipun efektif, mekanisme tersebut memiliki keterbatasan berupa ketergantungan pada hiperparameter dan sensitivitas terhadap variasi skala objek.
+
+% YOLOv8 mengadopsi paradigma \textit{anchor-free} untuk meningkatkan efisiensi dan generalisasi model \cite{yaseen2024yolov8indepthexplorationinternal}.
+% Dalam pendekatan ini, model tidak lagi melakukan regresi terhadap \textit{offset} dari \textit{anchor box} yang telah ditetapkan, tetapi secara langsung memprediksi parameter geometrik kotak pembatas yakni pusat, lebar, dan tinggi dalam koordinat normalisasi relatif terhadap peta fitur.
+% Perubahan ini mengurangi kompleksitas komputasi, mempercepat konvergensi pelatihan, serta meningkatkan stabilitas pada kasus deteksi objek berukuran kecil dan padat.
+% Strategi \textit{anchor-free} juga menunjukkan konsistensi hasil deteksi lintas domain tanpa memerlukan penyesuaian parameter \textit{anchor} secara manual.
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.65\textwidth]{gambar/yolox-shifting-to-anchor-free-design.jpg}
+%     \caption{Perbandingan pendekatan \textit{anchor-based} dan \textit{anchor-free}\cite{yaseen2024yolov8indepthexplorationinternal}.}
+%     \label{fig:anchor_free_comparison}
+% \end{figure}
+
+% \subsubsection{Arsitektur Modul C2f}
+
+% Modul C2f pada YOLOv8 merepresentasikan evolusi arsitektur dari modul \textbf{C3} yang digunakan pada YOLOv5, dengan tujuan meningkatkan efisiensi komputasi tanpa mengorbankan kemampuan representasi fitur.
+% C2f mengimplementasikan prinsip \textit{Cross-Stage Partial (CSP)} yang memisahkan aliran fitur (\textit{feature flow}) menjadi dua jalur komputasi paralel: satu jalur dilewatkan melalui blok konvolusional bertingkat, sementara jalur lainnya langsung terhubung ke tahap penggabungan (\textit{feature concatenation}).
+% Strategi ini mengurangi redundansi gradien selama propagasi balik, sehingga menurunkan jumlah parameter dan penggunaan memori secara signifikan \cite{yaseen2024yolov8indepthexplorationinternal}. Modul C3 yang hanya melakukan fusi fitur setelah proses konvolusi bertingkat, C2f memungkinkan \textit{feature fusion} terjadi secara lebih adaptif melalui koneksi parsial antar tahap, sehingga memperkaya konteks spasial yang ditangkap oleh jaringan.
+% Pendekatan ini menghasilkan representasi fitur yang lebih stabil dan padat, sekaligus mempertahankan performa deteksi pada objek kecil dan berukuran menengah.
+% Secara keseluruhan, studi perbandingan arsitektur menunjukkan bahwa C2f menawarkan peningkatan efisiensi sekitar 15–20\% dalam penggunaan memori dengan akurasi setara atau lebih baik dibandingkan modul sebelumnya \cite{selcuk2023comparison}.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{gambar/YOLOv5-C3-Module-YOLOv8-C2f-Module-and-Darknet-Bottleneck-Module.png}
+%     \caption{Perbandingan struktur modul C3 (YOLOv5) dan C2f (YOLOv8). C2f meningkatkan efisiensi memori dengan mengoptimalkan pemrosesan jalur fitur sambil mempertahankan kedalaman representasi \cite{yaseen2024yolov8indepthexplorationinternal}.}
+%     \label{fig:c3_vs_c2f}
+% \end{figure}
+% \subsubsection{Arsitektur \textit{Decoupled Head}}
+
+% YOLOv8 memperkenalkan arsitektur \textit{Decoupled Head} sebagai perbaikan atas desain \textit{coupled head} yang digunakan pada varian sebelumnya.
+% Pada pendekatan tradisional, jalur prediksi untuk \textit{kelas}, \textit{confidence}, dan \textit{bounding box regression} dibagikan dalam satu struktur konvolusional terpadu, yang sering kali menyebabkan interferensi gradien selama proses pelatihan.
+% Fenomena ini menghambat konvergensi dan menurunkan stabilitas prediksi, khususnya pada skenario dengan kepadatan objek tinggi atau tumpang tindih antar objek.
+
+% Arsitektur \textit{Decoupled Head} memisahkan jalur prediksi menjadi tiga cabang independen yang masing-masing difokuskan pada tugas klasifikasi, estimasi kepercayaan (\textit{objectness confidence}), dan regresi kotak pembatas.
+% Setiap cabang melakukan pembelajaran terhadap representasi fitur yang terisolasi dan spesifik terhadap tujuannya \cite{yaseen2024yolov8indepthexplorationinternal}.
+% Pemisahan ini menghasilkan distribusi gradien yang lebih seimbang antar cabang prediksi, yang berdampak pada peningkatan stabilitas pelatihan dan percepatan konvergensi.
+% Hasil empiris menunjukkan bahwa struktur tersebut juga memperkuat keseimbangan antara presisi dan \textit{recall} pada evaluasi \textit{mAP}, terutama pada dataset dengan tingkat tumpang tindih objek yang tinggi.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.65\textwidth]{gambar/The-difference-between-the-YOLO-coupled-head-and-decoupled-head.png}
+%     \caption{Perbandingan arsitektur \textit{coupled head} dan \textit{decoupled head} pada YOLOv8.
+%     Jalur regresi kotak, klasifikasi, dan estimasi kepercayaan dipisahkan untuk menghindari interferensi gradien, meningkatkan stabilitas pelatihan, serta mempercepat konvergensi model \cite{yaseen2024yolov8indepthexplorationinternal}.}
+%     \label{fig:decoupled_head_yolov8}
+% \end{figure}
+
+\subsection{ByteTrack: Multi-Object Tracking Berbasis Asosiasi Dua Tahap}
+
+Pada sistem video \textit{real-time}, identitas objek perlu dipertahankan
+secara konsisten antar-frame agar pelacakan berkelanjutan. Deteksi objek saja
+umumnya hanya menghasilkan posisi objek pada satu frame tanpa menjaga
+identitas lintas waktu. Kebutuhan ini mendorong penggunaan pendekatan
+\textit{Multi-Object Tracking} (MOT), salah satunya \textit{ByteTrack}
+\cite{zhang2022bytetrack_eccv}, yang menerapkan asosiasi dua tahap untuk
+menjaga kontinuitas identitas objek saat bergerak.
+
+ByteTrack mengatasi keterbatasan asosiasi konvensional dengan tetap
+mempertimbangkan deteksi berskor rendah yang kerap muncul akibat
+\textit{occlusion}, perubahan pencahayaan, atau ukuran objek kecil. Asosiasi
+dilakukan secara bertahap, pertama pada deteksi skor tinggi, lalu pada deteksi
+skor rendah untuk memulihkan identitas yang sempat hilang. Strategi ini
+meningkatkan stabilitas pelacakan dan menurunkan risiko kehilangan identitas
+pada lingkungan dinamis \cite{zhang2022bytetrack_eccv}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{gambar/bytraking_pipeline.png}
+\caption{Pipeline ByteTrack \cite{zhang2022bytetrack_eccv}. Arsitektur ini mengintegrasikan tahap deteksi dan asosiasi secara bertingkat untuk mempertahankan identitas objek pada video \textit{real-time}.}
+\label{fig:bytetrack_pipeline}
+\end{figure}
+
+\subsubsection{Asosiasi Dua Tahap}
+
+ByteTrack menerapkan strategi asosiasi dua tahap untuk mempertahankan
+identitas objek secara konsisten antar-frame. Hasil deteksi pada setiap frame
+dikelompokkan ke dalam dua kategori, yaitu
+deteksi skor tinggi dan deteksi skor rendah. Prediksi posisi objek diperoleh
+dengan \textit{Kalman Filter}, sedangkan pencocokan antara deteksi dan prediksi
+dilakukan menggunakan metrik \textit{Intersection over Union} (IoU).
+
+Pada tahap pertama, lintasan aktif dicocokkan dengan deteksi skor tinggi untuk
+mendapatkan pasangan paling andal. Tahap kedua meninjau lintasan yang belum
+terasosiasi dan mencocokkannya dengan deteksi skor rendah agar identitas dapat
+dipulihkan. Penugasan akhir diselesaikan menggunakan
+\textit{Hungarian Algorithm} untuk meminimalkan biaya asosiasi berbasis IoU.
+Pendekatan ini efektif meningkatkan stabilitas pelacakan pada kondisi
+\textit{occlusion} dan variasi pencahayaan tinggi.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{gambar/dua_langkah.png}
+\caption{Ilustrasi proses asosiasi dua tahap pada ByteTrack. Tahap pertama mengasosiasikan deteksi skor tinggi, kemudian tahap kedua memulihkan identitas objek melalui asosiasi dengan deteksi skor rendah \cite{zhang2022bytetrack_eccv}.}
+\label{fig:bytetrack_two_stage}
+\end{figure}
+
+\subsection{Data Warehouse}
+
+\textit{Data warehouse} adalah sistem penyimpanan terpusat yang dirancang
+untuk mendukung analitik dan pengambilan keputusan jangka panjang. Berbeda
+dengan basis data operasional yang berfokus pada transaksi harian,
+\textit{data warehouse} dioptimalkan untuk \textit{query} kompleks, agregasi,
+dan analisis historis \cite{vyas2025demystifying}. Struktur ini memungkinkan
+integrasi data dari berbagai sumber sehingga informasi strategis dapat
+dihasilkan secara lebih komprehensif. Data di dalam \textit{data warehouse}
+bersifat terintegrasi, berorientasi subjek, historis, dan relatif stabil.
+Informasi disusun untuk mendukung analisis multidimensi, pembacaan tren
+jangka panjang, serta perbandingan antarkurun waktu. Dalam praktik terkini,
+konsep ini juga diadopsi pada
+lingkungan \textit{cloud} dan \textit{big data} untuk meningkatkan
+skalabilitas serta efisiensi analitik \cite{golfarelli2024bigdata}.
+\subsection{Data Mart}
+
+\textit{Data mart} merupakan subset dari \textit{data warehouse} yang
+dirancang untuk kebutuhan analitik pada domain spesifik, bukan untuk
+pemrosesan transaksi harian (\textit{online transaction processing}/OLTP).
+Dalam konteks sistem pemantauan pelanggaran helm, rancangan ini memungkinkan
+penetapan \textit{event grain} yang jelas pada tabel fakta. Dengan demikian,
+setiap kejadian dapat terekam konsisten dan tetap dapat diaudit. Penggunaan
+tabel dimensi yang dapat digunakan ulang, seperti dimensi kamera, jenis
+pelanggaran, dan waktu, juga membentuk struktur deskriptif yang stabil untuk
+analisis lintas sudut pandang.
+
+Dari perspektif performa, \textit{data mart} menyediakan jalur agregasi yang
+lebih efisien untuk kebutuhan panel Grafana karena metrik telah dipetakan pada
+skema relasional yang terarah. Struktur ini juga berfungsi sebagai lapisan
+semantik yang stabil untuk definisi indikator kinerja utama (KPI), sehingga
+istilah, rumus, dan konteks analitik tetap konsisten pada seluruh dasbor.
+Tanpa lapisan \textit{data mart}, kueri analitik harus berulang kali
+merekonstruksi logika bisnis langsung dari aliran data mentah. Kondisi ini
+berisiko meningkatkan latensi, inkonsistensi hasil, dan kompleksitas
+pemeliharaan sistem.
+
+\subsubsection{Star Schema}
+
+\textit{Star schema} merupakan paradigma pemodelan data multidimensi yang
+banyak diterapkan pada sistem \textit{data warehouse}. Struktur ini terdiri
+atas satu tabel fakta yang menyimpan metrik numerik serta tabel dimensi yang
+menyediakan konteks deskriptif. Desain ini mendukung efisiensi analitik
+melalui denormalisasi terkontrol, sehingga \textit{query} agregatif dan
+pelaporan dapat dijalankan lebih cepat. Kombinasi tabel fakta dan dimensi juga
+memberi fleksibilitas untuk analisis multi-sumbu serta pelaporan berbasis
+waktu.
+
+Pendekatan \textit{star schema} memiliki beberapa keunggulan metodologis:
+\begin{enumerate}[a.]
+\item Memungkinkan eksekusi \textit{query} analitik berkecepatan tinggi melalui struktur denormalisasi,
+\item Menyediakan skema data yang mudah diinterpretasikan untuk pelaporan dan visualisasi,
+\item Mendukung analisis \textit{time-series} serta perbandingan historis secara efisien.
+\end{enumerate}
+
+\subsection{Grafana}
+
+\textit{Grafana} adalah platform sumber terbuka untuk visualisasi data dan
+pengembangan \textit{dashboard} interaktif pada lingkungan
+\textit{big data warehouse}. Platform ini terintegrasi dengan berbagai sistem,
+seperti \textit{Apache Kafka}, \textit{Prometheus}, \textit{InfluxDB}, dan
+\textit{Elasticsearch}, sehingga sesuai untuk pemantauan \textit{real-time}
+\cite{sutanto2025wazuhgrafana}. Melalui antarmuka web, Grafana membantu pengguna
+memantau performa sistem, mendeteksi anomali, dan melakukan analisis
+operasional secara dinamis.
+
+Grafana berperan sebagai lapisan presentasi yang menghubungkan hasil
+pemrosesan sistem analitik, seperti \textit{Apache Spark}, ke dalam
+visualisasi interaktif yang diperbarui otomatis. Aliran data dari
+\textit{streaming pipeline} diproses melalui mekanisme
+\textit{Extract--Transform--Load} (ETL) sebelum ditampilkan pada dasbor.
+Pendekatan ini mendukung paradigma \textit{real-time analytics}, sehingga
+pengguna dapat mengeksplorasi data terbaru tanpa menunggu siklus
+\textit{batch} \cite{devireddy2020realtimewarehouse}.
+
+\subsection{Evaluasi Deteksi Objek}
+
+Evaluasi model deteksi dilakukan untuk menilai kemampuan model mengenali dan
+melokalisasi objek dibandingkan anotasi \textit{ground truth}. Proses ini
+mengikuti protokol \textit{MS COCO} \cite{lin2014microsoft} dengan metrik
+utama \textit{Precision}, \textit{Recall}, \textit{Average Precision} (AP),
+dan \textit{Mean Average Precision} (mAP). Melalui metrik tersebut,
+keseimbangan antara deteksi benar dan kesalahan prediksi dapat dinilai secara
+komprehensif.
+
+\subsubsection{Klasifikasi Deteksi: TP, FP, FN, dan TN}
+
+Formulasi berbasis \textit{confusion matrix} menggunakan elemen $TC_{ij}$
+untuk menyatakan jumlah sampel dengan kelas sebenarnya $i$ yang diprediksi
+sebagai kelas $j$. Pada kasus multikelas dengan $K$ kelas, nilai diagonal
+$TC_{ii}$ menunjukkan prediksi benar untuk kelas $i$, sedangkan elemen di luar
+diagonal menunjukkan kesalahan antar kelas. Komponen evaluasi untuk kelas
+target $i$ dituliskan sebagai:
+\begin{equation}
+\begin{aligned}
+TP_i &= TC_{ii}, & FP_i &= \sum_{j \neq i} TC_{ji}, \\
+FN_i &= \sum_{j \neq i} TC_{ij}, & TN_i &= \sum_{p \neq i} \sum_{q \neq i} TC_{pq}
+\end{aligned}
+\end{equation}
+
+Makna metrik dapat dibaca secara sederhana. \textit{True Positive} (TP) adalah
+jumlah prediksi benar pada kelas yang sedang dianalisis. \textit{False
+Positive} (FP) adalah sampel dari kelas lain yang salah diprediksi sebagai
+kelas target. \textit{False Negative} (FN) adalah sampel kelas target yang
+salah diprediksi ke kelas lain. \textit{True Negative} (TN) adalah seluruh
+sampel non-target yang juga tidak diprediksi sebagai kelas target. Pada
+\textit{object detection}, perhitungan ini dilakukan setelah pencocokan kelas
+dan ambang IoU. Deteksi dihitung TP hanya jika kelas tepat dan lokalisasi
+memenuhi ambang.
+
+Pada skenario klasifikasi biner (kelas positif dan negatif), komponen evaluasi
+didefinisikan sebagai berikut: TP merepresentasikan prediksi positif yang benar
+(positif$\to$positif), FP merepresentasikan prediksi positif yang keliru pada
+sampel negatif (negatif$\to$positif), FN merepresentasikan sampel positif yang
+salah diprediksi sebagai negatif (positif$\to$negatif), dan TN
+merepresentasikan prediksi negatif yang benar (negatif$\to$negatif). Pada
+skenario klasifikasi tiga kelas (A, B, C) dengan kelas A sebagai target,
+komponen evaluasi dinyatakan sebagai TP$_A$ = $TC_{AA}$,
+FP$_A$ = $TC_{BA}+TC_{CA}$, FN$_A$ = $TC_{AB}+TC_{AC}$, sedangkan TN$_A$
+mencakup seluruh elemen yang tidak berada pada baris A maupun kolom A.
+Formulasi tersebut menjadi landasan perhitungan \textit{Precision} dan
+\textit{Recall} per kelas sebelum dilakukan agregasi ke metrik evaluasi
+keseluruhan.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{gambar/false_positive.png}
+\caption{Ilustrasi kategori hasil deteksi objek pada sistem \textit{object detection}: True Positive (TP), False Positive (FP), dan False Negative (FN) \cite{lin2014microsoft}.}
+\label{fig:tp_fp_fn_tn}
+\end{figure}
+
+Klasifikasi tersebut menjadi dasar kuantitatif untuk menilai keseimbangan
+antara kemampuan model mendeteksi objek relevan dan risiko kesalahan deteksi.
+Keterkaitan antarkomponen ini penting untuk menafsirkan metrik lanjutan,
+seperti kurva \textit{Precision-Recall} dan mAP. Relasi antara
+\textit{Precision}, \textit{Recall}, dan \textit{Intersection over Union}
+(IoU) ditunjukkan pada Gambar~\ref{fig:precision_recall_iou}.
+
+Perhitungan \textit{Precision} dan \textit{Recall} dinyatakan sebagai:
+\begin{equation}
+\text{Precision} = \frac{TP}{TP + FP}, \qquad
+\text{Recall} = \frac{TP}{TP + FN}
+\end{equation}
+
+\textit{Intersection over Union} (IoU) digunakan untuk mengukur tingkat
+kesesuaian geometrik antara kotak prediksi dan anotasi
+\textit{ground truth}, yang dirumuskan sebagai:
+\begin{equation}
+\text{IoU}(A,B) = \frac{|A \cap B|}{|A \cup B|}
+\end{equation}
+
+Nilai IoU yang lebih tinggi menunjukkan tumpang tindih area yang lebih besar
+antara prediksi dan anotasi, sehingga ketepatan lokalisasi objek menjadi lebih
+baik. Kombinasi evaluasi berbasis \textit{Precision}, \textit{Recall}, dan IoU
+kemudian digunakan untuk menghitung metrik agregat, terutama AP dan mAP.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{gambar/object-detection-metrics_3.png}
+\caption{Hubungan antara \textit{Precision}, \textit{Recall}, dan \textit{Intersection over Union} (IoU) pada sistem deteksi objek. Nilai IoU dihitung dari area tumpang tindih antara kotak prediksi dan anotasi \textit{ground truth} sesuai protokol evaluasi deteksi objek \cite{lin2014microsoft}.}
+\label{fig:precision_recall_iou}
+\end{figure}
+
+\subsubsection{Average Precision (AP) dan Mean Average Precision (mAP)}
+
+Evaluasi performa deteksi objek umumnya menggunakan metrik
+\textit{Average Precision} (AP) dan \textit{Mean Average Precision} (mAP),
+yang menjadi standar utama pada dataset \textit{MS COCO}
+\cite{lin2014microsoft}. Kedua metrik ini menilai keseimbangan antara
+ketepatan prediksi kelas dan ketelitian lokalisasi terhadap
+\textit{ground truth}.
+
+\textit{Average Precision} (AP) didefinisikan sebagai luas area di bawah kurva
+\textit{Precision-Recall} (PR) untuk setiap kelas objek. Nilai AP
+menggambarkan rata-rata presisi pada berbagai tingkat \textit{recall}, dan
+secara matematis dinyatakan sebagai:
+\begin{equation}
+\text{AP} = \int_{0}^{1} \text{Precision}(\text{Recall}) \, d(\text{Recall})
+\end{equation}
+Nilai AP yang tinggi menunjukkan bahwa model mampu mempertahankan presisi
+tinggi pada rentang \textit{recall} yang luas. Untuk menilai performa model
+secara keseluruhan lintas kelas dan ambang lokalisasi, digunakan mAP yang
+merupakan rata-rata AP pada beberapa ambang IoU. Formulasi mAP pada
+\textit{COCO benchmark} adalah:
+\begin{equation}
+\text{mAP}_{@[0.50:0.95]} = \frac{1}{10} \sum_{k=0}^{9} \text{AP}_{\text{IoU} = 0.50 + 0.05k}
+\end{equation}
+
+Pendekatan ini mencakup sepuluh ambang IoU dari 0{.}50 hingga 0{.}95 dengan
+interval 0{.}05, sehingga evaluasi tidak hanya menilai keberhasilan deteksi
+objek, tetapi juga ketepatan batas spasialnya.
+% \subsubsection{MOTA (Multi-Object Tracking Accuracy)}
+% MOTA merupakan salah satu metrik paling luas digunakan untuk mengevaluasi kinerja pelacakan karena menggambarkan akurasi pelacakan secara keseluruhan.
+% MOTA didefinisikan sebagai:
+% \begin{equation}
+% \text{MOTA} = 1 - \frac{\sum_{t} (FN_t + FP_t + IDSW_t)}{\sum_{t} GT_t}
+% \end{equation}
+% \noindent
+% dengan:
+% \begin{description}
+%     \item[$FN_t$:] jumlah objek yang tidak terdeteksi pada frame ke-$t$,
+%     \item[$FP_t$:] jumlah deteksi palsu,
+%     \item[$IDSW_t$:] jumlah \textit{ID Switch} (pergantian identitas),
+%     \item[$GT_t$:] jumlah total objek sebenarnya (ground truth).
+% \end{description}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.75\textwidth]{gambar/mota.png}
+%     \caption{Ilustrasi MOTA.
+%     Gambar menunjukkan hubungan antara deteksi benar, salah, serta pergantian identitas dalam penilaian MOTA.}
+%     \label{fig:mota_milan}
+% \end{figure}
+\subsection{Evaluasi Sistem Streaming}
+
+Evaluasi sistem pemrosesan data \textit{real-time} berbasis arsitektur Kappa
+tidak hanya menilai akurasi keluaran, tetapi juga efisiensi aliran data yang
+berjalan kontinu dengan jeda serendah mungkin
+\cite{kreps2014questioning}. Dua metrik utama yang digunakan adalah
+\textit{throughput} dan \textit{latency}, yang bersama-sama merepresentasikan
+kinerja \textit{pipeline} pemrosesan \textit{end-to-end}
+\cite{kleppmann2017designing}. \textit{Throughput} menunjukkan jumlah unit
+data, seperti \textit{frame} video atau pesan Kafka, yang dapat diproses
+sistem per satuan waktu. Metrik ini umumnya diukur dalam
+\textit{frame per second} (FPS) \cite{marz2015big}.
+
+Sebaliknya, \textit{latency} menggambarkan jeda antara data diterima dan hasil
+dikeluarkan \cite{kleppmann2017designing}. Pada arsitektur Kappa, seluruh
+pemrosesan berlangsung dalam satu jalur \textit{stream pipeline}. Karena itu,
+nilai \textit{latency} dipengaruhi oleh rancangan pemrosesan
+\textit{stateful} dan efisiensi komunikasi antarkomponen. Sistem streaming
+dinilai optimal jika mampu mempertahankan \textit{throughput} tinggi dengan
+\textit{latency} rendah, idealnya pada rentang \textit{sub-second}. Kondisi
+ini penting untuk aplikasi visi komputer yang membutuhkan respons cepat,
+seperti deteksi pelanggaran lalu lintas \cite{kreps2014questioning}.

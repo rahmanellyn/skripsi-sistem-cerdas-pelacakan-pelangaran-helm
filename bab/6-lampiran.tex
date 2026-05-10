@@ -1,0 +1,110 @@
+
+% !TEX root = ../main.tex
+\chapter{LAMPIRAN}
+
+\lampiran{Skema Data Warehouse}
+\label{app:star_schema}
+
+\subsubsection{Tabel Fakta (Fact Table)}
+
+
+\begin{table}[H]
+\centering
+\caption{Tabel Fakta \textit{f\_violations}}
+\label{tab:fact_violations}
+\small\setlength{\tabcolsep}{4pt}\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Kolom} & \textbf{Tipe Data} & \textbf{Deskripsi} \\
+\midrule
+\textit{violation\_id} & BIGINT (PK) & Kunci primer unik untuk setiap event pelanggaran. \\
+\textit{timestamp\_fk} & BIGINT (FK) & Kunci asing ke \textit{dim\_time}. \\
+\textit{camera\_fk} & INT (FK) & Kunci asing ke \textit{dim\_camera}. \\
+\textit{violation\_type\_fk} & INT (FK) & Kunci asing ke \textit{dim\_violation\_type}. \\
+\textit{track\_id} & VARCHAR(50) & ID unik objek yang dilacak (dari sistem deteksi). \\
+\textit{duration\_in\_frame} & INT & Ukuran (measure) durasi objek dalam frame. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Tabel Dimensi (Dimension Tables)}
+
+
+\begin{table}[H]
+\centering
+\caption{Ringkasan Relasi Skema Bintang}
+\label{tab:ringkasan-relasi-star-schema}
+\small\setlength{\tabcolsep}{4pt}\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.28\textwidth}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Tabel} & \textbf{Kunci Utama} & \textbf{Relasi terhadap \textit{fact\_violations}} \\
+\midrule
+\texttt{dim\_time} & \texttt{timestamp\_pk} & Direlasikan melalui \texttt{timestamp\_fk} untuk menyediakan konteks waktu kejadian. \\
+\texttt{dim\_camera} & \texttt{camera\_pk} & Direlasikan melalui \texttt{camera\_fk} untuk menyediakan konteks sumber kamera dan lokasi pemantauan. \\
+\texttt{dim\_violation\_type} & \texttt{type\_pk} & Direlasikan melalui \texttt{violation\_type\_fk} untuk menyediakan konteks jenis pelanggaran yang terdeteksi. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Tabel Dimensi \textit{dim\_time}}
+\label{tab:dim_time}
+\small\setlength{\tabcolsep}{4pt}\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Kolom} & \textbf{Tipe Data} & \textbf{Deskripsi} \\
+\midrule
+\textit{timestamp\_pk} & BIGINT (PK) & Kunci primer unik untuk dimensi waktu. \\
+\textit{datetime\_full} & TIMESTAMP & Timestamp lengkap (YYYY-MM-DD HH:MI:SS). \\
+\textit{hour\_of\_day} & SMALLINT & Jam dalam sehari (0--23). \\
+\textit{day\_of\_week} & VARCHAR(10) & Nama hari (Senin, Selasa, ...). \\
+\textit{date} & DATE & Tanggal. \\
+\textit{month} & SMALLINT & Bulan dalam setahun (1--12). \\
+\textit{year} & SMALLINT & Tahun. \\
+\textit{is\_weekend} & BOOLEAN & Penanda (True/False) jika akhir pekan. \\
+\textit{is\_exam\_period} & BOOLEAN & Penanda (True/False) jika masa ujian. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Tabel Dimensi \textit{dim\_camera}}
+\label{tab:dim_camera}
+\small\setlength{\tabcolsep}{4pt}\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Kolom} & \textbf{Tipe Data} & \textbf{Deskripsi} \\
+\midrule
+\textit{camera\_pk} & INT (PK) & Kunci primer unik untuk kamera. \\
+\textit{camera\_name} & VARCHAR(100) & Nama atau ID kamera (misal: \texttt{CCTV\_GERBANG\_A}). \\
+\textit{location\_description} & VARCHAR(255) & Deskripsi lokasi pemasangan CCTV. \\
+\textit{gps\_latitude} & DECIMAL(9,6) & Koordinat lintang. \\
+\textit{gps\_longitude} & DECIMAL(9,6) & Koordinat bujur. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Tabel Dimensi \textit{dim\_violation\_type}}
+\label{tab:dim_violation_type}
+\small\setlength{\tabcolsep}{4pt}\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Kolom} & \textbf{Tipe Data} & \textbf{Deskripsi} \\
+\midrule
+\textit{type\_pk} & INT (PK) & Kunci primer unik untuk jenis pelanggaran. \\
+\textit{type\_name} & VARCHAR(50) & Nama pelanggaran (misal: \texttt{NO\_HELMET}). \\
+\textit{description} & TEXT & Deskripsi detail dari aturan pelanggaran. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\lampiran{Kode Program dan Model melalui QR Code}
+\label{app:qr_code_repo}
+
+Lampiran ini menyediakan akses ke kode program dan model penelitian melalui \textit{Quick Response Code} (QR Code) pada Gambar~\ref{fig:qr-code-lampiran} dan tautan klikable \href{https://bit.ly/Lampiran-TA-EGGISATRIA}{lampiran digital}, sehingga pembaca dapat membuka berkas pendukung secara langsung.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{gambar/qr_code_lampiran.png}
+\caption{QR Code untuk mengakses lampiran digital yang memuat kode program dan model penelitian.}
+\label{fig:qr-code-lampiran}
+\end{figure}

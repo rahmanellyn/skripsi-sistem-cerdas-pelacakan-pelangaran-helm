@@ -1,0 +1,36 @@
+% !TEX root = ../main.tex
+\chapter{KESIMPULAN DAN SARAN}
+\label{chap:kesimpulan}
+
+% ============================================================
+\section{Kesimpulan}
+\label{sec:kesimpulan}
+% ============================================================
+
+Penelitian ini telah berhasil merancang, mengimplementasikan, dan mengevaluasi arsitektur sistem cerdas berbasis komputasi tepi (\textit{edge computing}) dan analitik data besar (\textit{big data analytics}) untuk pelacakan pelanggaran penggunaan helm di Institut Teknologi Sumatera (ITERA). Berdasarkan evaluasi kinerja sistem secara menyeluruh, diperoleh tiga kesimpulan utama yang menjawab tujuan penelitian:
+
+\begin{enumerate}[1.]
+  \item  Model deteksi objek berbasis YOLOv8 berhasil dioptimalkan menggunakan dataset kustom CCTV kampus. Hasil evaluasi kuantitatif menunjukkan bahwa model beroperasi dengan keandalan tinggi, dibuktikan oleh capaian \textit{Mean Average Precision} (mAP@50) sebesar 91,4\% pada data validasi dan 90,0\% pada data uji. Keseimbangan marjinal antara \textit{precision} (87,5\%) dan \textit{recall} (86,5\%) mengonfirmasi bahwa model tidak hanya sensitif dalam melokalisasi target, tetapi juga presisi dalam membedakan kelas \texttt{MOTORCYCLE}, \texttt{DRIVER\_HELMET}, dan \texttt{DRIVER\_NO\_HELMET} di tengah berbagai distorsi visual dan kondisi pencahayaan luar ruang.
+
+  \item Integrasi antara inferensi YOLOv8 dan algoritma pelacakan multiobjek ByteTrack terbukti berhasil mentransformasi deteksi piksel mentah menjadi aliran peristiwa (\textit{event stream}) yang terstruktur. Penerapan filter asosiasi spasial (\textit{Intersection over Area}) dan konfirmasi temporal (\textit{N-Frame}) secara efektif mengeliminasi deteksi positif palsu (\textit{false positives}) sebelum data ditransmisikan. Arsitektur pemrosesan tepi ini mencatat kinerja waktu nyata yang memadai tanpa dukungan GPU, dengan \textit{throughput} stabil pada 18,9 FPS dan latensi inferensi 53 milidetik. Selain itu, orkestrasi distribusi data melalui Apache Kafka (latensi transmisi 2,65 milidetik) dan Apache Spark Structured Streaming beroperasi secara asinkron tanpa memicu tekanan balik (\textit{memory backpressure}), memastikan ketahanan sistem saat menghadapi lonjakan aliran data.
+
+  \item Perancangan \textit{data mart} berbasis skema bintang (\textit{star schema}) pada PostgreSQL terbukti efisien dalam menyajikan landasan komputasi untuk \textit{Online Analytical Processing} (OLAP). Pengujian operasional menggunakan data riil selama 11 jam berhasil mengekstraksi wawasan operasional dari 113 kejadian pelanggaran aktual. Visualisasi pada dasbor Grafana secara presisi memetakan distribusi kepadatan bimodal, dengan anomali puncak absolut terekam pada pukul 14.45--15.15 WIB akibat korelasi faktor cuaca (pasca-hujan deras) dan transisi jadwal kelas. Implementasi infrastruktur ujung-ke-ujung (\textit{end-to-end}) ini berhasil memvalidasi fungsionalitas sistem bukan sekadar sebagai alat pendeteksi, melainkan sebagai instrumen Sistem Pendukung Keputusan (\textit{Decision Support System}) yang mentransformasi metode pengawasan UPT K3L ITERA dari inspeksi reaktif menjadi penjagaan preventif yang terarah dan berbasis bukti (\textit{data-driven}).
+\end{enumerate}
+
+% ============================================================
+\section{Saran}
+\label{sec:saran}
+% ============================================================
+
+Meskipun sistem telah beroperasi secara fungsional sesuai dengan batasan penelitian, terdapat sejumlah peluang optimasi untuk pengembangan lebih lanjut agar arsitektur ini siap diterapkan pada skala produksi (\textit{production-grade}). Rekomendasi untuk penelitian mendatang adalah sebagai berikut:
+
+\begin{enumerate}[1.]
+  \item {Akselerasi Perangkat Keras pada Simpul Tepi (\textit{Edge AI}):}
+    Beban komputasi inferensi spasial saat ini masih bertumpu pada Unit Pemroses Sentral (CPU). Untuk memperluas jangkauan sistem ke arsitektur multikamera (\textit{multi-camera surveillance}) dengan resolusi tingkat tinggi, disarankan untuk mendelegasikan beban inferensi pada akselerator perangkat keras spesifik (\textit{Hardware Accelerator}) seperti NVIDIA Jetson atau Google Coral Tensor Processing Unit (TPU). Pendekatan ini secara teoretis dapat mendongkrak \textit{throughput} melampaui 30 FPS dan mereduksi latensi operasional secara drastis.
+
+  \item {Perluasan Ekstraksi Atribut Keselamatan dan Identifikasi Entitas:}
+    Model visi komputer dapat dikembangkan lebih lanjut untuk mencakup deteksi bentuk pelanggaran sekunder yang berkontribusi pada risiko fatalitas, seperti kelebihan kapasitas penumpang motor (berbonceng tiga) atau penggunaan ponsel saat berkendara. Di samping itu, integrasi dengan subsistem \textit{Automatic License Plate Recognition} (ALPR) sangat direkomendasikan agar setiap aliran peristiwa dapat diikat langsung dengan identitas registrasi kendaraan pelanggar secara otonom.
+
+\end{enumerate}
+
+Secara keseluruhan, penelitian ini berkontribusi dalam menyajikan kerangka kerja arsitektur analitik video terintegrasi memadukan pembelajaran mendalam (YOLOv8), pelacakan multiobjek (ByteTrack), dan pemrosesan aliran data (Kafka--Spark) sebagai solusi pemantauan keselamatan lalu lintas cerdas yang efisien, skalabel, dan aplikatif di lingkungan perguruan tinggi.

@@ -1,0 +1,122 @@
+% !TEX root = ../main.tex
+\chapter{PENDAHULUAN}
+
+\section{Latar Belakang}
+\label{section:latarbelakang}
+
+% === Paragraf 1: Visi ITERA dan Daya Tarik Forest Campus ===
+Institut Teknologi Sumatera (Itera) memiliki visi untuk menjadi perguruan
+tinggi teknologi yang unggul dengan lingkungan kampus yang nyaman, aman, dan
+berwawasan lingkungan \cite{itera2019renstra}. Salah satu implementasinya
+adalah konsep \textit{forest campus}. Konsep ini tidak hanya menata ruang
+hijau, tetapi juga menekankan keberlanjutan, ketertiban, dan kualitas hidup
+sivitas akademika. Dalam praktiknya, pengembangan \textit{forest campus}
+terhubung dengan konsep \textit{smart campus}. Konsep ini memanfaatkan sistem
+digital, Internet of Things (IoT), dan kecerdasan buatan untuk meningkatkan
+efisiensi operasional, pengalaman pengguna, dan keselamatan
+\cite{Polin2023SmartCampus}. Kombinasi nilai ekologis dan teknologi tersebut
+memperkuat citra Itera dan meningkatkan daya tariknya bagi calon mahasiswa.
+
+% === Paragraf 2: Masalah Pertumbuhan dan Tantangan Mobilitas ===
+Daya tarik tersebut berdampak pada peningkatan jumlah mahasiswa baru setiap
+tahun. Data akademik dan statistik mahasiswa menunjukkan tren kenaikan
+penerimaan mahasiswa dari tahun ke tahun \cite{itera2025dashboard}.
+Pertumbuhan ini berkorelasi dengan meningkatnya
+penggunaan kendaraan pribadi, terutama sepeda motor
+\cite{purwanti2018analisisitenas}. Berbagai studi menunjukkan bahwa kenaikan
+populasi kampus meningkatkan volume transportasi dan konsumsi energi
+\cite{rachmadian2024kesadaran}. Studi tersebut juga menekankan keterlibatan
+mahasiswa dalam inisiatif transportasi dan energi berkelanjutan di lingkungan
+perguruan tinggi \cite{rachmadian2024kesadaran}. Itera telah memulai
+pengembangan transportasi umum melalui Smart BRT \cite{antaranews2025brt}.
+Kapasitas dan jangkauannya masih terbatas \cite{antaranews2025brt}. Kondisi tersebut meningkatkan potensi pelanggaran lalu lintas, salah satunya
+ketidakpatuhan penggunaan helm. Isu ini juga menjadi perhatian nasional.
+Penelitian lintas-seksional di lingkungan universitas menunjukkan bahwa 40,8\%
+mahasiswa pengendara sepeda motor tidak menggunakan helm secara konsisten
+\cite{safitri2020gambaran}. Penelitian lain mengidentifikasi beberapa penyebab
+utama kepatuhan helm pada remaja, meliputi faktor keluarga, ekonomi,
+individu, dan sosial-budaya \cite{nobrihas2023kepatuhan}. Untuk menekan risiko kecelakaan, Itera telah
+menjalankan program kolaborasi keselamatan berkendara bersama mitra
+eksternal. Di perguruan tinggi lain, pedoman berlalu lintas juga ditetapkan
+secara formal melalui peraturan rektor
+\cite{iteranews2024kolaborasi,its2025pedoman}. Namun, tantangan utama masih berada pada
+sistem penegakan aturan. Pengawasan saat ini masih mengandalkan satuan
+pengamanan (Satpam) secara manual, sehingga belum dapat mencakup seluruh area
+kampus secara berkelanjutan dan tetap rentan terhadap kesalahan manusia.
+Pendekatan ini juga belum menghasilkan data kuantitatif yang konsisten.
+Akibatnya, informasi penting seperti lokasi \textit{hotspot}, waktu puncak,
+dan frekuensi pelanggaran belum terdokumentasi dengan baik. Kondisi ini
+menyulitkan Unit Pelaksana Teknis Keselamatan, Kesehatan Kerja, dan
+Lingkungan (UPT K3L) Itera dalam merumuskan intervensi yang tepat sasaran dan
+berbasis bukti.
+
+% === Paragraf 4: Solusi yang Diusulkan - Sistem Cerdas YOLOv8 + ByteTrack ===
+Penelitian ini mengusulkan sistem visi komputer untuk mendeteksi dan
+menganalisis pelanggaran penggunaan helm di lingkungan kampus Itera. Rancangan
+sistem mengintegrasikan YOLOv8 sebagai model deteksi objek. ByteTrack digunakan
+sebagai algoritma pelacakan multiobjek untuk menjaga konsistensi identitas
+pengendara antarframe. Kombinasi ini efektif untuk analisis lalu lintas berbasis
+video pada skenario dinamis dengan banyak objek bergerak \cite{liu2025vehicle}.
+Berbeda dengan pendekatan yang berhenti pada identifikasi visual, penelitian
+ini mentransformasikan keluaran inferensi menjadi aliran peristiwa
+(\textit{event stream}). Aliran ini memuat konteks spasial dan temporal, seperti
+waktu kejadian, titik kamera, identitas objek, dan status pelanggaran. Setiap
+peristiwa dicatat sebagai metadata terstruktur dan disimpan dalam data mart.
+Penyimpanan ini mendukung analisis historis, nonvolatil, dan berorientasi
+analitik. Dengan pendekatan ini, sistem berfungsi sebagai alat deteksi otomatis.
+Sistem juga menjadi fondasi analitik jangka panjang untuk mengidentifikasi
+\textit{hotspot} pelanggaran dan menentukan waktu rawan. Hasilnya mendukung
+pengambilan keputusan keselamatan berbasis data dalam kerangka
+\textit{smart campus}.
+
+\section{Rumusan Masalah}
+\label{section:rumusanmasalah}
+
+Berdasarkan latar belakang yang telah diuraikan, rumusan masalah penelitian
+ini adalah sebagai berikut:
+
+\begin{enumerate}
+  \item Bagaimana merancang dan melatih YOLOv8 untuk mendeteksi pengendara sepeda motor berhelm dan tanpa helm pada video CCTV kampus secara andal?
+
+  \item Bagaimana mengintegrasikan YOLOv8 dan ByteTrack pada pemrosesan video real-time agar inferensi menjadi \textit{event stream} dengan konteks spasial dan temporal?
+
+  \item Bagaimana merancang skema data mart untuk menyimpan peristiwa pelanggaran helm secara sistematis agar mendukung analisis pola lalu lintas dan tren keselamatan di Itera?
+\end{enumerate}
+
+\section{Tujuan Penelitian}
+\label{section:tujuanpenelitian}
+
+Tujuan penelitian ini adalah sebagai berikut:
+
+\begin{enumerate}
+  \item Mengembangkan dan melatih YOLOv8 untuk mendeteksi pengendara sepeda motor berhelm dan tanpa helm pada lingkungan kampus.
+
+  \item Mengimplementasikan integrasi YOLOv8 dan ByteTrack pada pemrosesan video real-time untuk menghasilkan \textit{event stream} pelanggaran helm dengan konteks spasial dan temporal.
+
+  \item Merancang dan mengimplementasikan data mart analitik sebagai bagian dari arsitektur data warehouse untuk menyimpan hasil deteksi pelanggaran helm secara historis. Hasilnya mendukung analisis pola lalu lintas dan keputusan keselamatan berbasis data di Itera.
+
+\end{enumerate}
+
+\section{Batasan Penelitian}
+\label{section:batasanpenelitian}
+
+Untuk memastikan penelitian tetap fokus dan dapat diselesaikan dalam kurun
+waktu yang ditetapkan, ruang lingkup penelitian dibatasi sebagai berikut:
+
+\begin{enumerate}
+  \item Penelitian difokuskan pada deteksi dan analisis pelanggaran penggunaan helm oleh pengendara sepeda motor. Pelanggaran lain, seperti kecepatan, parkir liar, atau rambu, tidak termasuk dalam cakupan penelitian.
+
+  \item Penelitian berfokus pada analisis historis dan agregatif dari aliran peristiwa pelanggaran helm. Sistem tidak dirancang untuk memprediksi kejadian atau memberikan rekomendasi kebijakan secara otomatis.
+
+  \item YOLOv8 digunakan sebagai komponen untuk mengekstraksi informasi visual dari data video. Penelitian tidak membahas modifikasi arsitektur internal YOLOv8, perbandingan dengan detektor lain, maupun optimasi pada tingkat algoritmik.
+
+  \item Pengumpulan dan pengujian data dilakukan dalam rentang waktu tertentu, yaitu pada periode 5 Februari.
+
+  \item Penelitian tidak melakukan perbandingan eksperimental antara arsitektur streaming dan non-streaming. Fokus berada pada perancangan dan evaluasi sistem analitik end-to-end berbasis peristiwa.
+
+  \item Evaluasi operasional menggunakan sumber komputasi perangkat keras yang tersedia pada satu mesin pengujian. Keterbatasan kapasitas CPU, memori, dan GPU pada lingkungan eksperimen menyebabkan pengujian multi-kamera skala besar belum dapat dijalankan sebagai operasi produksi penuh.
+\end{enumerate}
+
+% Sub bab lain dapat ditambahkan, misalnya:
+%\section{Manfaat Penelitian}
+%\section{Hipotesis}
