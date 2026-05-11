@@ -78,13 +78,14 @@ Sistem dibangun dengan \textit{Kappa Architecture} \cite{kreps2014questioning} y
   \caption{Arsitektur Sistem Streaming-First Pelacakan Pelanggaran Helm}
   \label{fig:architecture}
 \end{figure}
-\section{Perancangan Model YOLOv8 dan ByteTrack}
-Bagian ini menjelaskan perancangan model deteksi dan pelacakan, mulai dari proses pelatihan YOLOv8 hingga integrasi ByteTrack pada tahap inferensi.
+\section{Perancangan Model YOLOv8}
+Bagian ini menjelaskan perancangan model deteksi, yaitu proses pelatihan YOLOv8 sebagai komponen pengenalan objek pada lapisan \textit{Ingestion \& Edge Intelligence}. Integrasi ByteTrack pada tahap inferensi dibahas terpisah pada Sub-bab~\ref{sec:logika-deteksi} bersama logika filter spasial-temporal lainnya.
 
 \subsection{Pelatihan Model YOLOv8}
-Model YOLOv8s yang telah dilatih pada dataset COCO disesuaikan ulang melalui proses \textit{fine-tuning} menggunakan dataset kustom Itera pada \textit{framework} Ultralytics. Proses ini menghasilkan berkas model \textit{best.pt} dengan bobot optimal untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
+Model YOLOv8n yang telah dilatih pada dataset COCO disesuaikan ulang melalui proses \textit{fine-tuning} menggunakan dataset kustom Itera pada \textit{framework} Ultralytics. Proses ini menghasilkan berkas model \textit{best.pt} dengan bobot optimal untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
 
 \section{Logika Deteksi Pelanggaran Helm}
+\label{sec:logika-deteksi}
 
 Sistem mengintegrasikan model deteksi objek YOLOv8 dan algoritma pelacakan multiobjek ByteTrack untuk mengidentifikasi pengendara yang menggunakan dan tidak menggunakan helm.
 
