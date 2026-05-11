@@ -602,8 +602,7 @@ Tabel~\ref{tab:datamart-sample} memperlihatkan contoh tiga baris hasil \textit{j
 \subsection{Visualisasi Dasbor Analitik Waktu Nyata (\textit{Real-Time Dashboard})}
 \label{subsec:visualisasi-dashboard}
 
-Lapisan presentasi (\textit{presentation layer}) diwujudkan sebagai dasbor interaktif berbasis Grafana. 
-
+Lapisan presentasi diwujudkan sebagai dasbor interaktif berbasis Grafana yang terhubung langsung ke \texttt{fact\_violations}. Grafana dipilih karena bersifat \textit{open source}, ringan dipasang di server kampus, dan mendukung penyegaran data tiap beberapa detik tanpa konfigurasi tambahan. Tampilan utama dasbor pada Gambar~\ref{fig:grafana-kpi-overview} membagi panel ke dalam empat kategori sesuai kebutuhan pengawasan: indikator cepat, tren waktu, performa sistem AI, dan distribusi spasio-temporal.
 
 % --- EVIDENCE 1: Screenshot Grafana Overview ---
 \begin{figure}[H]
@@ -613,10 +612,10 @@ Lapisan presentasi (\textit{presentation layer}) diwujudkan sebagai dasbor inter
 \label{fig:grafana-kpi-overview}
 \end{figure}
 
-Konfigurasi antarmuka membagi kebutuhan pengawasan ke dalam empat kategori panel analitik. Pembagian tersebut memisahkan fungsi pemantauan cepat, pelacakan tren waktu, evaluasi performa sistem AI, dan pemetaan distribusi spasio-temporal dalam satu alur kerja. Tabel~\ref{tab:dashboard-panels} merinci fungsi tiap kategori panel.
+Empat kategori panel disusun supaya operator dapat membaca dasbor dari yang paling ringkas ke yang paling rinci. Kategori KPI berada paling atas untuk memberi ringkasan satu pandang, kategori tren waktu mengikuti agar perubahan harian terlihat, kategori performa AI menempati posisi tengah untuk memantau kesehatan model, dan kategori distribusi spasio-temporal di bawah memberi peta panas serta peringkat lokasi rawan. Rincian fungsi tiap kategori ada pada Tabel~\ref{tab:dashboard-panels}.
 
 
-Pada pengujian antarmuka, pembaruan data dari skema bintang tersinkron dengan proses \textit{rendering} visual pada tiap panel. Sinkronisasi tersebut menempatkan arsitektur \textit{Business Intelligence} pada peran lapisan observasi yang siap dipakai untuk pemantauan kampus. Pembacaan pola temporal dan spasial secara analitis kemudian disajikan pada Subbab~\ref{subsec:analisis-data-lapangan}.
+Pengujian antarmuka mencatat setiap pembaruan di \texttt{fact\_violations} muncul di panel Grafana dalam beberapa detik. Dengan sinkronisasi yang konsisten, dasbor siap dipakai operator gerbang untuk pemantauan harian. Pembacaan pola temporal dan spasial atas data dasbor disajikan pada Sub-bab~\ref{subsec:analisis-data-lapangan}.
 
 % --- EVIDENCE 2: Tabel Konfigurasi Panel ---
 \begin{table}[htbp]
