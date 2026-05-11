@@ -81,8 +81,57 @@ Sistem dibangun dengan \textit{Kappa Architecture} \cite{kreps2014questioning} y
 \section{Perancangan Model YOLOv8}
 Bagian ini menjelaskan perancangan model deteksi, yaitu proses pelatihan YOLOv8 sebagai komponen pengenalan objek pada lapisan \textit{Ingestion \& Edge Intelligence}. Integrasi ByteTrack pada tahap inferensi dibahas terpisah pada Sub-bab~\ref{sec:logika-deteksi} bersama logika filter spasial-temporal lainnya.
 
-\subsection{Pelatihan Model YOLOv8}
-Model YOLOv8n yang telah dilatih pada dataset COCO disesuaikan ulang melalui proses \textit{fine-tuning} menggunakan dataset kustom Itera pada \textit{framework} Ultralytics. Proses ini menghasilkan berkas model \textit{best.pt} dengan bobot optimal untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
+\subsection{Pelatihan Model YOLOv8n}
+\label{subsec:pelatihan-yolov8n}
+Penelitian ini memilih arsitektur YOLOv8n sebagai model deteksi objek dengan tiga pertimbangan teknis. Pertama, YOLOv8n adalah varian paling ringan pada keluarga YOLOv8 yang dirilis Ultralytics pada Januari 2023 dengan sekitar 3,2 juta parameter dan beban komputasi 8,7 GFLOPs pada resolusi $640 \times 640$ piksel \cite{jocher2023yolo,terven2023yoloreview}. Profil sekecil ini cocok untuk inferensi sisi tepi pada perangkat tanpa akselerator GPU, termasuk laptop pengujian di gerbang Itera. Kedua, YOLOv8 meninggalkan pendekatan berbasis \textit{anchor box} yang menyulitkan kalibrasi pada objek dengan rasio aspek beragam, lalu menggantinya dengan \textit{decoupled anchor-free detection head} yang langsung memprediksi titik pusat objek \cite{yaseen2024yolov8indepthexplorationinternal}. Pendekatan tanpa \textit{anchor} ini memudahkan deteksi atribut kecil seperti helm yang ukurannya relatif terhadap badan motor selalu bervariasi. Ketiga, YOLOv8n memakai \textit{backbone} CSPDarknet dengan modul C2f untuk mengekstrak fitur visual secara efisien, lalu menyambungnya ke \textit{neck} yang menggabungkan \textit{Feature Pyramid Network} (FPN) dan \textit{Path Aggregation Network} (PAN) sehingga objek pada beragam skala dapat dideteksi dalam satu kali \textit{forward pass} \cite{lenawala2023yolov8,terven2023yoloreview}. Ringkasan komponen arsitektur tersebut tersaji pada Tabel~\ref{tab:arsitektur-yolov8n}.
+
+\begin{table}[H]
+\centering
+\caption{Spesifikasi arsitektur YOLOv8n pada resolusi masukan $640 \times 640$ piksel.}
+\label{tab:arsitektur-yolov8n}
+\begin{tabular}{ll}
+\hline
+\textbf{Komponen} & \textbf{Spesifikasi} \\
+\hline
+Resolusi masukan       & $640 \times 640 \times 3$ piksel RGB \\
+\textit{Backbone}      & CSPDarknet dengan modul C2f dan SPPF \\
+\textit{Neck}          & FPN + PAN (\textit{Path Aggregation Network}) \\
+\textit{Detection head} & \textit{Decoupled anchor-free}, tiga skala (P3, P4, P5) \\
+Jumlah parameter       & 3,2 juta \\
+Kompleksitas komputasi & 8,7 GFLOPs \\
+Komponen galat         & \textit{box loss} + \textit{class loss} + \textit{distribution focal loss} \\
+\textit{Stride backbone} & 8, 16, 32 (deteksi multi-skala) \\
+\hline
+\end{tabular}
+\end{table}
+
+Pelatihan model dilakukan pada layanan terkelola Roboflow Train 3.0 dengan varian \textit{Roboflow 3.0 Object Detection (Fast)}, bukan pada lingkungan Ultralytics murni. Pertimbangannya pragmatis: platform menyediakan dasbor pemantauan, penyimpanan dataset terversi, dan jalur distribusi model siap-API yang menyingkat siklus pengembangan tesis \cite{roboflowdocs2025,roboflowblog2023}. Roboflow 3.0 merupakan arsitektur internal Roboflow yang menurunkan tiga komponen galat khas YOLOv8 yaitu \textit{box loss}, \textit{class loss}, dan \textit{distribution focal loss} (DFL); kemunculan ketiga galat ini pada Gambar~\ref{fig:train-loss} dan Gambar~\ref{fig:val-loss} di Bab 4 menjadi bukti turunan tersebut. Roboflow tidak membuka detail modifikasi internal pada \textit{backbone}, \textit{neck}, atau \textit{head} sehingga arsitektur Roboflow 3.0 (Fast) tidak dapat dijelaskan lebih dalam di luar fakta bahwa ia berasal dari keluarga YOLOv8n. Konsekuensinya, \textit{learning rate}, \textit{optimizer}, momentum, \textit{weight decay}, dan bobot komponen galat tidak terbuka untuk diatur pengguna karena platform menentukannya secara internal demi menjaga reprodusibilitas pada infrastruktur terkelola. Praktik melaporkan Roboflow 3.0 sebagai model yang setara dengan keluarga YOLO sudah lazim pada literatur perbandingan kontemporer \cite{solano2025roboflow}.
+
+Meskipun hyperparameter tingkat-bawah tidak dapat diintervensi, sejumlah konfigurasi tingkat-atas tetap dapat ditetapkan oleh pengguna dan menjadi bagian dari catatan pelatihan tesis ini. Rincian konfigurasi tersaji pada Tabel~\ref{tab:hyperparameter-pelatihan}. Resolusi masukan ditetapkan pada $640 \times 640$ piksel mengikuti \textit{default} keluarga YOLOv8 yang sengaja dipilih agar kelipatan \textit{stride} 32 terpenuhi tanpa \textit{padding} yang menggeser posisi \textit{bounding box}. Pelatihan berlangsung selama 300 \textit{epoch} dengan inisialisasi bobot dari \textit{checkpoint} COCO bawaan Roboflow yang diturunkan dari pra-pelatihan YOLOv8n pada Microsoft COCO 2017. Strategi \textit{transfer learning} ini mempercepat konvergensi pada dataset kustom berukuran sedang dan menjadi praktik standar pada \textit{framework} Ultralytics \cite{ultralyticsDocs}. Konfigurasi augmentasi pada Tabel~\ref{tab:augmentasi} mencerminkan augmentasi sisi platform yang diaktifkan saat pelatihan berlangsung. Untuk hyperparameter optimasi yang ditutup platform, sebagai acuan terdokumentasi, Ultralytics mengumumkan nilai \textit{default}: \textit{optimizer} = \texttt{auto} (memilih SGD atau AdamW tergantung ukuran model), \textit{learning rate} awal $\text{lr0}=0{,}01$, momentum 0,937, \textit{weight decay} $5 \times 10^{-4}$, \textit{warmup} 3 \textit{epoch}, dan bobot galat $\lambda_{\text{box}}=7{,}5$, $\lambda_{\text{cls}}=0{,}5$, $\lambda_{\text{dfl}}=1{,}5$ \cite{ultralyticsCfg}. Nilai aktual yang dipakai Roboflow Train 3.0 (Fast) tidak dipublikasikan, namun reprodusibilitas hasil dijamin lewat penguncian versi dataset dan versi model di platform sehingga eksperimen ulang dapat dilakukan pihak ketiga. Pelatihan menghasilkan berkas \textit{best.pt} berisi bobot terbaik untuk inferensi pada lapisan \textit{Ingestion \& Edge Intelligence}.
+
+\begin{table}[H]
+\centering
+\caption{Konfigurasi pelatihan model deteksi pada platform Roboflow Train 3.0.}
+\label{tab:hyperparameter-pelatihan}
+\begin{tabular}{lll}
+\hline
+\textbf{Parameter} & \textbf{Nilai} & \textbf{Sumber penetapan} \\
+\hline
+Arsitektur model           & Roboflow 3.0 Object Detection (Fast)             & Platform \\
+Arsitektur acuan           & YOLOv8n (Ultralytics)                             & Turunan \\
+Resolusi masukan           & $640 \times 640$ piksel                            & Pengguna \\
+Jumlah \textit{epoch}      & 300                                                & Pengguna \\
+\textit{Checkpoint} pra-latih & COCO 2017                                       & Pengguna \\
+Rasio pembagian dataset    & 82\% / 9\% / 9\%                                  & Pengguna \\
+Augmentasi                 & 6 ragam (Tabel~\ref{tab:augmentasi})              & Pengguna \\
+\textit{Optimizer}         & Tidak dibuka; acuan: \texttt{auto}                & Platform \\
+\textit{Learning rate} awal $\text{lr0}$ & Tidak dibuka; acuan: 0,01              & Platform \\
+Momentum                   & Tidak dibuka; acuan: 0,937                        & Platform \\
+\textit{Weight decay}      & Tidak dibuka; acuan: $5 \times 10^{-4}$           & Platform \\
+$\lambda_{\text{box}} / \lambda_{\text{cls}} / \lambda_{\text{dfl}}$ & Tidak dibuka; acuan: 7,5 / 0,5 / 1,5 & Platform \\
+\hline
+\end{tabular}
+\end{table}
 
 \section{Logika Deteksi Pelanggaran Helm}
 \label{sec:logika-deteksi}
@@ -144,7 +193,7 @@ Tahap ini menyiapkan dataset dan lingkungan eksperimen untuk pelatihan model vis
 \subsection{Tahap 2: Pengembangan Model Visi Komputer}
 Tahap ini berfokus pada pelatihan dan evaluasi model deteksi objek untuk mengenali atribut keselamatan berkendara.
 \begin{enumerate}[a.]
-\item {Pelatihan model YOLOv8}: model dilatih selama 300 \textit{epoch} dengan penalaan hiperparameter. Proses pelatihan dipantau melalui \textit{box loss}, \textit{class loss}, dan \textit{distribution focal loss} untuk memastikan konvergensi yang stabil.
+\item {Pelatihan model YOLOv8n}: model dilatih selama 300 \textit{epoch} pada layanan Roboflow Train 3.0 (varian \textit{Fast}, \textit{checkpoint} COCO). Proses pelatihan dipantau melalui \textit{box loss}, \textit{class loss}, dan \textit{distribution focal loss} untuk memastikan konvergensi yang stabil. Hyperparameter tingkat-bawah (\textit{learning rate}, \textit{optimizer}, momentum, dan bobot galat) ditentukan platform secara internal; rinciannya dibahas pada Sub-bab~\ref{subsec:pelatihan-yolov8n}.
 \item {Evaluasi kinerja model}: performa model dievaluasi menggunakan mAP@50, \textit{precision}, dan \textit{recall}, baik secara agregat maupun per kelas.
 \end{enumerate}
 
