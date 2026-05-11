@@ -676,11 +676,11 @@ Analisis agregat harian memetakan beban pelanggaran dari waktu ke waktu. Panel g
 \label{fig:grafana-akumulasi}
 \end{figure}
 
-Pada diagram batang ganda (\textit{dual-bar chart}), tren pertumbuhan kumulatif (batang biru) bertambah secara asimetris. Dari total 113 kejadian, beban tertinggi tercatat pada pukul 15.00 WIB sebanyak 23 kejadian (20,4\% dari beban harian), diikuti pukul 14.00 WIB sebanyak 19 kejadian (16,8\%), dan kedatangan pagi pukul 08.00 WIB sebanyak 18 kejadian (15,9\%). Pemusatan tersebut membentuk distribusi bimodal yang kontras dengan jam perkuliahan reguler seperti 09.00 atau 11.00 WIB yang frekuensi pelanggarannya minim.
+Diagram batang kumulatif (batang biru) menanjak tidak rata sepanjang hari: ada periode dengan lonjakan tajam dan ada periode yang nyaris datar. Dari total 113 kejadian, beban tertinggi tercatat pada pukul 15.00 WIB sebanyak 23 kejadian (20,4\%), diikuti pukul 14.00 WIB sebanyak 19 kejadian (16,8\%), dan pukul 08.00 WIB sebanyak 18 kejadian (15,9\%). Pemusatan beban di tiga jam tersebut membentuk distribusi bimodal: satu puncak pagi dan satu puncak sore, dengan jam kuliah aktif pukul 09.00--11.00 WIB di tengah yang relatif sepi pelanggaran.
 
 Frekuensi kumulatif yang tinggi pada rentang 14.00--15.00 WIB selaras dengan observasi lapangan. Titik kerawanan (\textit{vulnerability point}) jam tersebut bertepatan dengan peningkatan mobilitas mahasiswa setelah hujan lebat reda dan gelombang perpindahan saat transisi kelas sore.
 
-Transformasi aliran video menjadi peringkat waktu memiliki implikasi operasional yang langsung. Dasbor memadatkan pemantauan harian menjadi indikator prioritas terukur. Pada level manajerial, unit pengamanan kampus dapat memakai persentase kontribusi waktu sebagai landasan objektif Sistem Pendukung Keputusan (\textit{Decision Support System}). Pemahaman pola anomali berbasis cuaca dan jadwal mengizinkan alokasi personel patroli dipusatkan pada jam berisiko tinggi sehingga pengawasan menjadi lebih preventif dan terarah.
+Peringkat jam tersibuk membawa implikasi operasional yang jelas. Unit keamanan kampus dapat memakai distribusi ini untuk menempatkan personel patroli pada jam berisiko tinggi, bukan menyebar rata sepanjang hari. Susunan ini sejalan dengan peran sistem sebagai Sistem Pendukung Keputusan (\textit{Decision Support System}) di tingkat manajerial: data dari kamera berubah menjadi keputusan alokasi sumber daya yang berbasis bukti, bukan dugaan. Pemahaman pola pelanggaran berbasis cuaca dan jadwal kampus juga memungkinkan pengawasan dilakukan lebih awal sebelum jam puncak, sehingga sifatnya menjadi preventif.
 
 % ------------------------------------------------------------
 \subsubsection{Matriks Temporal dan Pemetaan Anomali Kepadatan}
