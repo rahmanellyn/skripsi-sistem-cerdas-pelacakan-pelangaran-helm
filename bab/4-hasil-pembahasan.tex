@@ -47,7 +47,7 @@ Selain dari sisi jumlah, kualitas dataset juga dilihat dari posisi kemunculan ob
 \label{fig:heatmap-per-class}
 \end{figure}
 
-Pada Gambar~\ref{fig:heatmap-per-class}(a), anotasi kelas \texttt{DRIVER\_HELMET} mengumpul di bagian tengah hingga kanan atas citra dengan titik paling padat tepat di lajur masuk utama. Pola sebaran kelas \texttt{DRIVER\_NO\_HELMET} pada Gambar~\ref{fig:heatmap-per-class}(b) hampir sama, hanya saja zona terpadatnya sedikit bergeser ke arah kiri tengah; pergeseran ini mencerminkan kebiasaan sebagian pengendara mengambil sisi tertentu saat masuk gerbang. Gambar~\ref{fig:heatmap-per-class}(c) untuk kelas \texttt{MOTORCYCLE} memiliki zona kepadatan yang nyaris sama persis dengan kelas \texttt{DRIVER\_HELMET}, sebab badan motor selalu menyertai pengendara sebagai konteks anotasi. Karena ketiga kelas terpusat pada wilayah yang relatif sama, \textit{Region of Interest} (ROI) ditarik mengikuti kontur jalan dan kira-kira mencakup bagian tengah sampai kanan atas citra.
+Pada Gambar~\ref{fig:heatmap-per-class}(a), anotasi kelas \texttt{DRIVER\_HELMET} mengumpul di bagian tengah hingga kanan atas citra dengan titik paling padat tepat di lajur masuk utama. Pola sebaran kelas \texttt{DRIVER\_NO\_HELMET} pada Gambar~\ref{fig:heatmap-per-class}(b) hampir sama, hanya saja zona terpadatnya sedikit bergeser ke arah kiri tengah. Pergeseran ini terjadi karena lajur masuk gerbang Itera lebih lebar di sisi kiri sehingga sebagian pengendara mengambil sisi tersebut. Gambar~\ref{fig:heatmap-per-class}(c) untuk kelas \texttt{MOTORCYCLE} memiliki zona kepadatan yang nyaris sama persis dengan kelas \texttt{DRIVER\_HELMET}, sebab badan motor selalu menyertai pengendara sebagai konteks anotasi. Karena ketiga kelas terpusat pada wilayah yang relatif sama, \textit{Region of Interest} (ROI) ditarik mengikuti kontur jalan dan kira-kira mencakup bagian tengah sampai kanan atas citra.
 
 Di luar ROI, warna peta panas didominasi biru muda hingga abu-abu yang berarti \textit{grid} di area tersebut hampir tidak memuat anotasi. Wilayah ini mencakup langit di bagian atas, trotoar, dan jalur berlawanan di tepi citra; kendaraan dan pengendara tidak melintas di sana sehingga tidak ada \textit{bounding box} yang muncul. Dengan membatasi inferensi pada ROI, area latar yang kosong tidak ikut diproses dan YOLOv8 hanya bekerja di zona yang memang aktif dilewati kendaraan. Cara ini mengurangi beban komputasi sekaligus menaikkan \textit{precision} dan menekan \textit{false positive} saat inferensi waktu nyata.
 
@@ -97,7 +97,7 @@ Variasi \textit{exposure} sebesar $\pm 10\%$ menyimulasikan perubahan iluminasi 
   \label{fig:aug-blur}
 \end{figure}
 
-\textit{Gaussian blur} dengan \textit{kernel} 1 piksel meniru kondisi kamera CCTV yang sedikit kehilangan fokus, misalnya karena embun pada lensa atau udara berkabut. Citra hasil augmentasi terlihat sedikit kabur tetapi bentuk objek tetap dapat dibedakan. Augmentasi ini melatih model untuk tidak terlalu bergantung pada ketajaman tepi objek saat melakukan deteksi.
+\textit{Gaussian blur} dengan \textit{kernel} 1 piksel meniru kondisi kamera CCTV yang sedikit kehilangan fokus, misalnya karena embun pada lensa atau udara berkabut. Citra hasil augmentasi terlihat sedikit kabur tetapi bentuk objek tetap dapat dibedakan. Pelatihan dengan citra kabur ini menahan model agar tidak bergantung pada ketajaman tepi saat melakukan deteksi.
 
 \begin{figure}[H]
   \centering
@@ -106,9 +106,9 @@ Variasi \textit{exposure} sebesar $\pm 10\%$ menyimulasikan perubahan iluminasi 
   \label{fig:aug-noise}
 \end{figure}
 
-Penambahan \textit{additive noise} sebesar 1\% mereplikasi \textit{grain} sensor kamera pada kondisi cahaya rendah, kompresi \textit{streaming} yang agresif, atau interferensi sinyal pada CCTV analog. Bintik halus yang muncul mengaburkan detail tepi objek tanpa mengubah bentuk keseluruhan, sehingga model tetap dapat mengenali pengendara meskipun citra penuh artefak.
+Penambahan \textit{additive noise} sebesar 1\% menirukan \textit{grain} sensor kamera pada kondisi cahaya rendah, kompresi \textit{streaming} yang agresif, atau interferensi sinyal pada CCTV analog. Bintik halus yang muncul mengaburkan detail tepi objek tanpa mengubah bentuk keseluruhan, sehingga model tetap dapat mengenali pengendara meskipun citra penuh artefak.
 
-Kelima teknik di atas dilengkapi dengan \textit{motion blur} berpanjang 10 piksel yang meniru jejak gerak ketika kendaraan melintas cepat atau \textit{frame rate} CCTV menurun. Secara keseluruhan, kombinasi enam teknik tersebut menekan risiko \textit{overfitting} terhadap kondisi visual tertentu dan mendorong model membentuk representasi semantik yang lebih kuat \cite{shorten2019survey}.
+Kelima teknik di atas dilengkapi dengan \textit{motion blur} berpanjang 10 piksel yang meniru jejak gerak ketika kendaraan melintas cepat atau \textit{frame rate} CCTV menurun. Secara keseluruhan, kombinasi enam teknik tersebut menekan risiko \textit{overfitting} terhadap kondisi visual tertentu dan membantu model tetap mengenali objek meskipun kondisi citra di lapangan berbeda dari data pelatihan \cite{shorten2019survey}.
 
 % ------------------------------------------------------------
 \subsection{Konfigurasi Pemisahan Dataset dan Dinamika Pelatihan}
@@ -274,7 +274,7 @@ node[midway, below, datalabel] {};
 \label{fig:pipeline-flow}
 \end{figure}
 
-Pada tahap awal, OpenCV membaca \textit{frame} dari kamera dan menyalinnya menjadi larik numerik. \textit{Resize} ke $640 \times 640$ dilakukan supaya dimensi masukan tetap kelipatan \textit{stride} 32 YOLOv8, sehingga inferensi tidak menghasilkan \textit{padding} yang menggeser posisi \textit{bounding box}. Cuplikan keluaran inferensi pada \textit{frame} awal pengujian disajikan di Tabel~\ref{tab:output-yolo}. Empat deteksi --- dua \texttt{MOTORCYCLE} dan dua \texttt{DRIVER\_HELMET} --- terbaca dengan \textit{confidence} 0,884 hingga 0,940 yang sudah cukup tinggi untuk diteruskan ke tahap pelacakan. Yang penting di tahap ini, ukuran data ringkas: tiap deteksi hanya beberapa puluh \textit{byte} dibandingkan \textit{frame} mentah yang berbobot \textit{megabyte}, sehingga lebar pita pada lapisan berikutnya tetap kecil.
+Pada tahap awal, OpenCV membaca \textit{frame} dari kamera dan menyalinnya menjadi larik numerik. \textit{Resize} ke $640 \times 640$ dilakukan supaya dimensi masukan tetap kelipatan \textit{stride} 32 YOLOv8, sehingga inferensi tidak menghasilkan \textit{padding} yang menggeser posisi \textit{bounding box}. Cuplikan keluaran inferensi pada \textit{frame} awal pengujian disajikan di Tabel~\ref{tab:output-yolo}. Empat deteksi --- dua \texttt{MOTORCYCLE} dan dua \texttt{DRIVER\_HELMET} --- terbaca dengan \textit{confidence} 0,884 hingga 0,940 yang sudah cukup tinggi untuk diteruskan ke tahap pelacakan. Yang penting di tahap ini, ukuran data ringkas: tiap deteksi berbobot sekitar 40--60 \textit{byte} dibandingkan \textit{frame} mentah yang berbobot \textit{megabyte}, sehingga lebar pita pada lapisan berikutnya tetap kecil.
 
 \begin{table}[htbp]
 \centering
